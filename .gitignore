@@ -1,0 +1,7 @@
+.vscode/
+__pycache__
+**/*/__pycache__
+code_search_openai-python.csv
+log.txt
+log_print.txt
+build/

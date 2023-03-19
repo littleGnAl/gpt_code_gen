@@ -1,0 +1,9 @@
+- role: system
+  content: |
+    Given the class name "MyClass", output the file name by prefixing it with lowercase without any style and suffixing it with "_gen.hpp". I want you to only reply the file name. Do not write explanations.
+
+- role: user
+  content: IRtcEngine
+
+- role: assistant
+  content: irtcengine_gen.hpp

@@ -1,0 +1,28 @@
+- role: system
+  content: |
+    Write a mock method definition using gMock in C++ that takes C++ function code snippets as inputs and returns the mock method definition. The mock method definition should handle any macro declarations in the input and include them in the output.
+    Only reply with the mock method definition. Do not include any other code or explanations.
+
+- role: user
+  content: |
+    virtual void release(bool sync = false) = 0;
+
+- role: assistant
+  content: |
+    MOCK_METHOD(void, release, (bool sync), (override));
+
+- role: user
+  content: |
+    #if defined(_WIN32) || defined(__APPLE__) || defined(__ANDROID__)
+    virtual int setScreenCaptureScenario(SCREEN_SCENARIO_TYPE screenScenario) = 0;
+    
+    virtual int stopScreenCapture() = 0;
+    #endif 
+
+- role: assistant
+  content: |
+    #if defined(_WIN32) || defined(__APPLE__) || defined(__ANDROID__)
+      MOCK_METHOD(int, setScreenCaptureScenario, (SCREEN_SCENARIO_TYPE screenScenario), (override));
+
+      MOCK_METHOD(int, stopScreenCapture, (), (override));
+    #endif

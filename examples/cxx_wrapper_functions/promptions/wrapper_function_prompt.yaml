@@ -1,0 +1,176 @@
+- role: system
+  content: |
+    I want you to act like a C++ expert to write a wrapper function that takes C++ function code snippets, user-defined structs, and enums as inputs, and returns a JSON object with a single field called "result" that contains the return value of the original function.
+    The wrapper function should have the signature: `int <function name>(const char *buff, size_t bufflen, std::string &out)`. To accomplish this, you should use the `nlohmann::json` third-party library and alias it to `MyJson` for ease of use.
+    The wrapper function should extract the required fields from the input JSON object and map them to the original function parameter's name and type. The extraction should be done carefully and accurately to ensure that the types and the values are correctly interpreted and passed to the original function.
+    The wrapper function should also handle any macro declarations in the input and include them in the output.
+    To ensure that the code is professional, clear, concise, and maintainable, you should take care of memory allocation and release to prevent memory leaks. It's essential to ensure that any allocated memory is released correctly and timely to avoid memory leaks.
+    Your wrapper function should not add any namespace prefix for the field type if that namespace does not appear in the given code snippets. You should be smart and professional when recognizing namespaces, but it's better to omit them than to make incorrect assumptions.
+    You should not include any explanations or examples of how the wrapper function works. The focus should be on writing a high-quality and efficient code that can be copied by the user directly.
+
+- role: user
+  content: |
+    virtual void release(bool sync = false) = 0;
+
+- role: assistant
+  content: |
+    int release(const char *buff, size_t bufflen, std::string &out) {
+        TRY_CATCH_START
+        std::string data(buff, bufflen);
+        MyJson reader = JSON_PARSE(data);
+
+        bool sync = false;
+        if (!reader["sync"].is_null()) sync = reader["sync"];
+
+        MyJson outdata;
+        outdata["result"] = wrapper_->release(sync);
+        out = JSON_TO_STRING(outdata);
+        TRY_CATCH_END
+        return 0;
+    }
+
+- role: user
+  content: |
+    virtual int joinChannel(const char* token, const char* channelId, const char* info, uid_t uid) = 0;
+
+- role: assistant
+  content: |
+    int joinChannel(const char *buff, size_t bufflen, std::string &out) {
+        TRY_CATCH_START
+        std::string data(buff, bufflen);
+        MyJson reader = JSON_PARSE(data);
+
+        string token = "";
+        string channelId = "";
+        string info = "";
+        uid_t uid;
+        if (!reader["token"].is_null()) token = reader["token"];
+        if (!reader["channelId"].is_null()) channelId = reader["channelId"];
+        if (!reader["info"].is_null()) info = reader["info"];
+        if (!reader["uid"].is_null()) uid = (uid_t)(long) reader["uid"];
+
+        MyJson outdata;
+        outdata["result"] = wrapper_->joinChannel(
+            token.empty() ? nullptr : token.c_str(), channelId.c_str(),
+            info.empty() ? nullptr : info.c_str(), uid);
+
+        out = JSON_TO_STRING(outdata);
+        TRY_CATCH_END
+        return 0;
+    }
+
+- role: user
+  content: |
+    struct LastmileProbeConfig {
+        bool probeUplink;
+        bool probeDownlink;
+        unsigned int expectedUplinkBitrate;
+        unsigned int expectedDownlinkBitrate;
+    };
+    
+    virtual int startLastmileProbeTest(const LastmileProbeConfig& config) = 0;
+
+- role: assistant
+  content: |
+    int startLastmileProbeTest(const char *buff, size_t bufflen, std::string &out) {
+        TRY_CATCH_START
+        std::string data(buff, bufflen);
+        MyJson reader = JSON_PARSE(data);
+
+        LastmileProbeConfig config;
+
+        MyJson lastmileProbeConfigReader = reader["config"];
+
+        if (!lastmileProbeConfigReader["probeUplink"].is_null())
+            config.probeUplink = lastmileProbeConfigReader["probeUplink"];
+            if (!lastmileProbeConfigReader["probeDownlink"].is_null())
+            config.probeDownlink = lastmileProbeConfigReader["probeDownlink"];
+            if (!lastmileProbeConfigReader["expectedUplinkBitrate"].is_null())
+            config.expectedUplinkBitrate = lastmileProbeConfigReader["expectedUplinkBitrate"];
+            if (!lastmileProbeConfigReader["expectedDownlinkBitrate"].is_null())
+            config.expectedDownlinkBitrate = lastmileProbeConfigReader["expectedDownlinkBitrate"];
+
+        MyJson outdata;
+        outdata["result"] = wrapper_->startLastmileProbeTest(config);
+
+        out = JSON_TO_STRING(outdata);
+        TRY_CATCH_END
+        return 0;
+    }
+
+- role: user
+  content: |
+    enum CHANNEL_PROFILE_TYPE {
+        CHANNEL_PROFILE_COMMUNICATION = 0,
+        CHANNEL_PROFILE_LIVE_BROADCASTING = 1,
+        CHANNEL_PROFILE_GAME __deprecated = 2,
+        CHANNEL_PROFILE_CLOUD_GAMING __deprecated = 3,
+        CHANNEL_PROFILE_COMMUNICATION_1v1 __deprecated = 4,
+    };
+
+    virtual int setChannelProfile(CHANNEL_PROFILE_TYPE profile) = 0;
+
+- role: assistant
+  content: |
+    int setChannelProfile(const char *buff, size_t bufflen, std::string &out) {
+        TRY_CATCH_START
+        std::string data(buff, bufflen);
+        MyJson reader = JSON_PARSE(data);
+
+        CHANNEL_PROFILE_TYPE profile = CHANNEL_PROFILE_COMMUNICATION;
+        if (!reader["profile"].is_null()) profile = reader["profile"];
+
+        MyJson outdata;
+        outdata["result"] = wrapper_->setChannelProfile(profile);
+
+        out = JSON_TO_STRING(outdata);
+        TRY_CATCH_END
+        return 0;
+    }
+
+- role: user
+  content: |
+    enum SCREEN_SCENARIO_TYPE {
+        SCREEN_SCENARIO_DOCUMENT = 1,
+        SCREEN_SCENARIO_GAMING = 2,
+        SCREEN_SCENARIO_VIDEO = 3,
+        SCREEN_SCENARIO_RDC = 4,
+    };
+
+    #if defined(_WIN32) || defined(__APPLE__) || defined(__ANDROID__)
+    virtual int setScreenCaptureScenario(SCREEN_SCENARIO_TYPE screenScenario) = 0;
+    
+    virtual int stopScreenCapture() = 0;
+    #endif 
+
+- role: assistant
+  content: |
+    int setScreenCaptureScenario(const char *buff, size_t bufflen, std::string &out) {
+    #if defined(_WIN32) || defined(__APPLE__) || defined(__ANDROID__)
+        TRY_CATCH_START
+        std::string data(buff, bufflen);
+        MyJson reader = JSON_PARSE(data);
+        SCREEN_SCENARIO_TYPE screenScenario = reader["screenScenario"];
+        MyJson outdata;
+        outdata["result"] = wrapper_->setScreenCaptureScenario(screenScenario);
+        out = JSON_TO_STRING(outdata);
+        TRY_CATCH_END
+        return 0;
+    #else
+        return -ERROR_CODE_TYPE::ERR_NOT_SUPPORTED;
+    #endif
+    }
+    
+    int stopScreenCapture(const char *buff, size_t bufflen, std::string &out) {
+    #if defined(_WIN32) || defined(__APPLE__) || defined(__ANDROID__)
+        TRY_CATCH_START
+        MyJson outdata;
+        outdata["result"] = wrapper_->stopScreenCapture();
+
+        out = JSON_TO_STRING(outdata);
+        TRY_CATCH_END
+        return 0;
+    #else
+        return -ERROR_CODE_TYPE::ERR_NOT_SUPPORTED;
+    #endif
+    }
