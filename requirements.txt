@@ -1,0 +1,10 @@
+fs~=2.4.16
+openai~=0.27.2
+tenacity~=8.2.2
+tiktoken~=0.3.2
+numpy~=1.24.2
+pandas~=1.5.3
+matplotlib~=3.7.1
+plotly~=5.13.1
+scipy~=1.10.1
+scikit-learn~=1.2.2

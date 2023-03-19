@@ -1,0 +1,2744 @@
+
+
+
+
+
+#pragma once
+
+#include "AgoraBase.h"
+#include "AgoraMediaBase.h"
+#include "IAgoraLog.h"
+#include "AgoraOptional.h"
+#include "IAudioDeviceManager.h"
+#include "IAgoraRhythmPlayer.h"
+#include "IAgoraMediaEngine.h"
+
+namespace agora {
+namespace rtc {
+
+template <typename T>
+static void SetFrom(Optional<T>* s, const Optional<T>& o) {
+  if (o) {
+    *s = o;
+  }
+}
+
+template <typename T>
+static void ReplaceBy(Optional<T>* s, const Optional<T>& o) {
+  *s = o;
+}
+
+
+
+
+enum MEDIA_DEVICE_TYPE {
+  
+  UNKNOWN_AUDIO_DEVICE = -1,
+  
+  AUDIO_PLAYOUT_DEVICE = 0,
+  
+  AUDIO_RECORDING_DEVICE = 1,
+  
+  VIDEO_RENDER_DEVICE = 2,
+  
+  VIDEO_CAPTURE_DEVICE = 3,
+  
+  AUDIO_APPLICATION_PLAYOUT_DEVICE = 4,
+  
+  AUDIO_VIRTUAL_PLAYOUT_DEVICE = 5,
+  
+  AUDIO_VIRTUAL_RECORDING_DEVICE = 6,
+};
+
+
+enum AUDIO_MIXING_STATE_TYPE {
+ 
+  AUDIO_MIXING_STATE_PLAYING = 710,
+  
+  AUDIO_MIXING_STATE_PAUSED = 711,
+  
+  AUDIO_MIXING_STATE_STOPPED = 713,
+  
+  AUDIO_MIXING_STATE_FAILED = 714,
+};
+
+
+enum AUDIO_MIXING_REASON_TYPE {
+  
+  AUDIO_MIXING_REASON_CAN_NOT_OPEN = 701,
+  
+  AUDIO_MIXING_REASON_TOO_FREQUENT_CALL = 702,
+  
+  AUDIO_MIXING_REASON_INTERRUPTED_EOF = 703,
+  
+  AUDIO_MIXING_REASON_ONE_LOOP_COMPLETED = 721,
+  
+  AUDIO_MIXING_REASON_ALL_LOOPS_COMPLETED = 723,
+  
+  AUDIO_MIXING_REASON_STOPPED_BY_USER = 724,
+  
+  AUDIO_MIXING_REASON_OK = 0,
+};
+
+
+enum INJECT_STREAM_STATUS {
+  
+  INJECT_STREAM_STATUS_START_SUCCESS = 0,
+  
+  INJECT_STREAM_STATUS_START_ALREADY_EXISTS = 1,
+  
+  INJECT_STREAM_STATUS_START_UNAUTHORIZED = 2,
+  
+  INJECT_STREAM_STATUS_START_TIMEDOUT = 3,
+  
+  INJECT_STREAM_STATUS_START_FAILED = 4,
+  
+  INJECT_STREAM_STATUS_STOP_SUCCESS = 5,
+  
+  INJECT_STREAM_STATUS_STOP_NOT_FOUND = 6,
+  
+  INJECT_STREAM_STATUS_STOP_UNAUTHORIZED = 7,
+  
+  INJECT_STREAM_STATUS_STOP_TIMEDOUT = 8,
+  
+  INJECT_STREAM_STATUS_STOP_FAILED = 9,
+  
+  INJECT_STREAM_STATUS_BROKEN = 10,
+};
+
+
+enum AUDIO_EQUALIZATION_BAND_FREQUENCY {
+  
+  AUDIO_EQUALIZATION_BAND_31 = 0,
+  
+  AUDIO_EQUALIZATION_BAND_62 = 1,
+  
+  AUDIO_EQUALIZATION_BAND_125 = 2,
+  
+  AUDIO_EQUALIZATION_BAND_250 = 3,
+  
+  AUDIO_EQUALIZATION_BAND_500 = 4,
+  
+  AUDIO_EQUALIZATION_BAND_1K = 5,
+  
+  AUDIO_EQUALIZATION_BAND_2K = 6,
+  
+  AUDIO_EQUALIZATION_BAND_4K = 7,
+  
+  AUDIO_EQUALIZATION_BAND_8K = 8,
+  
+  AUDIO_EQUALIZATION_BAND_16K = 9,
+};
+
+
+enum AUDIO_REVERB_TYPE {
+  
+  AUDIO_REVERB_DRY_LEVEL = 0,
+  
+  AUDIO_REVERB_WET_LEVEL = 1,
+  
+  AUDIO_REVERB_ROOM_SIZE = 2,
+  
+  AUDIO_REVERB_WET_DELAY = 3,
+  
+  AUDIO_REVERB_STRENGTH = 4,
+};
+
+enum STREAM_FALLBACK_OPTIONS {
+  
+
+  STREAM_FALLBACK_OPTION_DISABLED = 0,
+  
+  STREAM_FALLBACK_OPTION_VIDEO_STREAM_LOW = 1,
+  
+  STREAM_FALLBACK_OPTION_AUDIO_ONLY = 2,
+};
+
+enum PRIORITY_TYPE {
+  
+  PRIORITY_HIGH = 50,
+  
+  PRIORITY_NORMAL = 100,
+};
+
+struct RtcConnection;
+
+
+struct LocalVideoStats
+{
+    
+    uid_t uid;
+    
+    int sentBitrate;
+    
+    int sentFrameRate;
+    
+    int captureFrameRate;
+    
+    int captureFrameWidth;
+    
+    int captureFrameHeight;
+    
+    int regulatedCaptureFrameRate;
+    
+    int regulatedCaptureFrameWidth;
+    
+    int regulatedCaptureFrameHeight;
+    
+    int encoderOutputFrameRate;
+    
+    int encodedFrameWidth;
+    
+    int encodedFrameHeight;
+    
+    int rendererOutputFrameRate;
+    
+    int targetBitrate;
+    
+    int targetFrameRate;
+    
+    QUALITY_ADAPT_INDICATION qualityAdaptIndication;
+    
+    int encodedBitrate;
+    
+    int encodedFrameCount;
+    
+    VIDEO_CODEC_TYPE codecType;
+    
+    unsigned short txPacketLossRate;
+    
+    CAPTURE_BRIGHTNESS_LEVEL_TYPE captureBrightnessLevel;
+    
+    bool dualStreamEnabled;
+    
+    int hwEncoderAccelerating;
+};
+
+
+struct RemoteVideoStats {
+  
+  uid_t uid;
+  
+  int delay __deprecated;
+  
+  int width;
+  
+  int height;
+  
+  int receivedBitrate;
+  
+  int decoderOutputFrameRate;
+  
+  int rendererOutputFrameRate;
+  
+  int frameLossRate;
+  
+  int packetLossRate;
+  
+  VIDEO_STREAM_TYPE rxStreamType;
+  
+  int totalFrozenTime;
+  
+  int frozenRate;
+  
+  int avSyncTimeMs;
+  
+  int totalActiveTime;
+  
+  int publishDuration;
+  
+  int mosValue;
+};
+
+struct VideoCompositingLayout {
+  struct Region {
+    
+    uid_t uid;
+    
+    double x;  
+    
+    double y;  
+    
+    double width;  
+    
+    double height;  
+    
+    int zOrder;  
+
+    
+    double alpha;
+
+    media::base::RENDER_MODE_TYPE
+    renderMode;  
+
+    Region()
+        : uid(0),
+          x(0),
+          y(0),
+          width(0),
+          height(0),
+          zOrder(0),
+          alpha(1.0),
+          renderMode(media::base::RENDER_MODE_HIDDEN) {}
+  };
+
+  
+  int canvasWidth;
+  
+  int canvasHeight;
+  
+  const char* backgroundColor;  
+  
+  const Region* regions;
+  
+  int regionCount;
+  
+  const char* appData;
+  
+  int appDataLength;
+
+  VideoCompositingLayout()
+      : canvasWidth(0),
+        canvasHeight(0),
+        backgroundColor(NULL),
+        regions(NULL),
+        regionCount(0),
+        appData(NULL),
+        appDataLength(0) {}
+};
+
+
+struct InjectStreamConfig {
+  
+  int width;
+  
+  int height;
+  
+  int videoGop;
+  
+  int videoFramerate;
+  
+  int videoBitrate;
+  
+  AUDIO_SAMPLE_RATE_TYPE audioSampleRate;
+  
+  int audioBitrate;
+  
+  int audioChannels;
+
+  
+  
+  InjectStreamConfig()
+      : width(0),
+        height(0),
+        videoGop(30),
+        videoFramerate(15),
+        videoBitrate(400),
+        audioSampleRate(AUDIO_SAMPLE_RATE_48000),
+        audioBitrate(48),
+        audioChannels(1) {}
+};
+
+
+enum RTMP_STREAM_LIFE_CYCLE_TYPE {
+  
+  RTMP_STREAM_LIFE_CYCLE_BIND2CHANNEL = 1,
+  
+  RTMP_STREAM_LIFE_CYCLE_BIND2OWNER = 2,
+};
+
+
+struct PublisherConfiguration {
+  
+  int width;
+  
+  int height;
+  
+  int framerate;
+  
+  int bitrate;
+  
+  int defaultLayout;
+  
+  int lifecycle;
+  
+  bool owner;
+  
+  int injectStreamWidth;
+  
+  int injectStreamHeight;
+  
+  const char* injectStreamUrl;
+  
+  const char* publishUrl;
+  
+  const char* rawStreamUrl;
+  
+  const char* extraInfo;
+
+  PublisherConfiguration()
+      : width(640),
+        height(360),
+        framerate(15),
+        bitrate(500),
+        defaultLayout(1),
+        lifecycle(RTMP_STREAM_LIFE_CYCLE_BIND2CHANNEL),
+        owner(true),
+        injectStreamWidth(0),
+        injectStreamHeight(0),
+        injectStreamUrl(NULL),
+        publishUrl(NULL),
+        rawStreamUrl(NULL),
+        extraInfo(NULL) {}
+};
+
+
+enum CAMERA_DIRECTION {
+  
+  CAMERA_REAR = 0,
+  
+  CAMERA_FRONT = 1,
+};
+
+
+enum CLOUD_PROXY_TYPE {
+  
+  NONE_PROXY = 0,
+  
+  UDP_PROXY = 1,
+  
+  
+  TCP_PROXY = 2,
+  
+};
+
+
+struct CameraCapturerConfiguration {
+  
+#if defined(__ANDROID__) || (defined(__APPLE__) && TARGET_OS_IOS)
+  
+  CAMERA_DIRECTION cameraDirection;
+#else
+  
+  char deviceId[MAX_DEVICE_ID_LENGTH];
+#endif
+  
+  VideoFormat format;
+  bool followEncodeDimensionRatio;
+  CameraCapturerConfiguration() : followEncodeDimensionRatio(true) {
+#if defined(__ANDROID__) || (defined(__APPLE__) && TARGET_OS_IOS)
+  cameraDirection = CAMERA_REAR;
+#else
+  memset(deviceId, 0, sizeof(deviceId));
+#endif
+  }
+};
+
+struct ScreenCaptureConfiguration {
+  
+  bool isCaptureWindow; 
+  
+  uint32_t displayId;
+  
+  Rectangle screenRect; 
+  
+  view_t windowId;
+  
+  ScreenCaptureParameters params;
+  
+  Rectangle regionRect;
+
+  ScreenCaptureConfiguration() : isCaptureWindow(false), displayId(0), windowId(0) {}
+};
+
+#if (defined(__APPLE__) && TARGET_OS_MAC && !TARGET_OS_IPHONE)
+
+struct SIZE {
+  
+  int width;
+  
+  int height;
+
+  SIZE() : width(0), height(0) {}
+  SIZE(int ww, int hh) : width(ww), height(hh) {}
+};
+#endif
+
+#if defined(_WIN32) || (defined(__APPLE__) && TARGET_OS_MAC && !TARGET_OS_IPHONE)
+
+struct ThumbImageBuffer {
+  
+  const char* buffer;
+  
+  unsigned int length;
+  
+  unsigned int width;
+  
+  unsigned int height;
+  ThumbImageBuffer() : buffer(nullptr), length(0), width(0), height(0) {}
+};
+
+enum ScreenCaptureSourceType {
+  
+  ScreenCaptureSourceType_Unknown = -1,
+  
+  ScreenCaptureSourceType_Window = 0,
+  
+  ScreenCaptureSourceType_Screen = 1,
+  
+  ScreenCaptureSourceType_Custom = 2,
+};
+
+struct ScreenCaptureSourceInfo {
+  
+  ScreenCaptureSourceType type;
+  
+  view_t sourceId;
+  
+  const char* sourceName;
+  
+  ThumbImageBuffer thumbImage;
+  
+  ThumbImageBuffer iconImage;
+  
+  const char* processPath;
+  
+  const char* sourceTitle;
+  
+  bool primaryMonitor;
+  bool isOccluded;
+#if defined(_WIN32)
+  
+  bool minimizeWindow;
+  ScreenCaptureSourceInfo() : type(ScreenCaptureSourceType_Unknown), sourceId(nullptr), sourceName(nullptr),
+                              processPath(nullptr), sourceTitle(nullptr), primaryMonitor(false), isOccluded(false), minimizeWindow(false) {}
+#else
+  ScreenCaptureSourceInfo() : type(ScreenCaptureSourceType_Unknown), sourceId(nullptr), sourceName(nullptr), processPath(nullptr), sourceTitle(nullptr), primaryMonitor(false), isOccluded(false) {}
+#endif
+};
+
+class IScreenCaptureSourceList {
+ protected:
+  virtual ~IScreenCaptureSourceList(){};
+
+ public:
+  
+  virtual unsigned int getCount() = 0;
+  
+  virtual ScreenCaptureSourceInfo getSourceInfo(unsigned int index) = 0;
+  
+  virtual void release() = 0;
+};
+#endif 
+
+struct AdvancedAudioOptions {
+  
+   Optional<int> audioProcessingChannels;
+
+   AdvancedAudioOptions() {}
+  ~AdvancedAudioOptions() {}
+};
+
+struct ImageTrackOptions {
+  const char* imageUrl;
+  int fps;
+  VIDEO_MIRROR_MODE_TYPE mirrorMode;
+  ImageTrackOptions() : imageUrl(NULL), fps(1), mirrorMode(VIDEO_MIRROR_MODE_DISABLED) {}
+};
+
+
+struct ChannelMediaOptions {
+  
+  Optional<bool> publishCameraTrack;
+  
+  Optional<bool> publishSecondaryCameraTrack;
+  
+  Optional<bool> publishMicrophoneTrack;
+
+  #if defined(__ANDROID__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+  
+  Optional<bool> publishScreenCaptureVideo;
+  
+  Optional<bool> publishScreenCaptureAudio;
+  #else
+  
+  Optional<bool> publishScreenTrack;
+  
+  Optional<bool> publishSecondaryScreenTrack;
+  #endif
+
+  
+  Optional<bool> publishCustomAudioTrack;
+  
+  Optional<int> publishCustomAudioTrackId;
+  
+  Optional<bool> publishCustomVideoTrack;
+  
+  Optional<bool> publishEncodedVideoTrack;
+  
+  Optional<bool> publishMediaPlayerAudioTrack;
+  
+  Optional<bool> publishMediaPlayerVideoTrack;
+  
+  Optional<bool> publishTrancodedVideoTrack;
+  
+  Optional<bool> autoSubscribeAudio;
+  
+  Optional<bool> autoSubscribeVideo;
+  
+  Optional<bool> enableAudioRecordingOrPlayout;
+  
+  Optional<int> publishMediaPlayerId;
+  
+  Optional<CLIENT_ROLE_TYPE> clientRoleType;
+  
+  Optional<AUDIENCE_LATENCY_LEVEL_TYPE> audienceLatencyLevel;
+  
+  Optional<VIDEO_STREAM_TYPE> defaultVideoStreamType;
+  
+  Optional<CHANNEL_PROFILE_TYPE> channelProfile;
+  
+  Optional<int> audioDelayMs;
+  
+  Optional<int> mediaPlayerAudioDelayMs;
+  
+  Optional<const char*> token;
+  
+  Optional<bool> enableBuiltInMediaEncryption;
+  
+  Optional<bool> publishRhythmPlayerTrack;
+  
+  Optional<bool> isInteractiveAudience;
+  
+  Optional<video_track_id_t> customVideoTrackId;
+  
+  Optional<bool> isAudioFilterable;
+
+  ChannelMediaOptions() {}
+  ~ChannelMediaOptions() {}
+
+  void SetAll(const ChannelMediaOptions& change) {
+#define SET_FROM(X) SetFrom(&X, change.X)
+
+      SET_FROM(publishCameraTrack);
+      SET_FROM(publishSecondaryCameraTrack);
+      SET_FROM(publishMicrophoneTrack);
+#if defined(__ANDROID__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+      SET_FROM(publishScreenCaptureVideo);
+      SET_FROM(publishScreenCaptureAudio);
+#else
+      SET_FROM(publishScreenTrack);
+      SET_FROM(publishSecondaryScreenTrack);
+#endif
+      SET_FROM(publishTrancodedVideoTrack);
+      SET_FROM(publishCustomAudioTrack);
+      SET_FROM(publishCustomAudioTrackId);
+      SET_FROM(publishCustomVideoTrack);
+      SET_FROM(publishEncodedVideoTrack);
+      SET_FROM(publishMediaPlayerAudioTrack);
+      SET_FROM(publishMediaPlayerVideoTrack);
+      SET_FROM(autoSubscribeAudio);
+      SET_FROM(autoSubscribeVideo);
+      SET_FROM(publishMediaPlayerId);
+      SET_FROM(enableAudioRecordingOrPlayout);
+      SET_FROM(clientRoleType);
+      SET_FROM(audienceLatencyLevel);
+      SET_FROM(defaultVideoStreamType);
+      SET_FROM(channelProfile);
+      SET_FROM(audioDelayMs);
+      SET_FROM(mediaPlayerAudioDelayMs);
+      SET_FROM(token);
+      SET_FROM(enableBuiltInMediaEncryption);
+      SET_FROM(publishRhythmPlayerTrack);
+      SET_FROM(customVideoTrackId);
+      SET_FROM(isAudioFilterable);
+      SET_FROM(isInteractiveAudience);
+#undef SET_FROM
+  }
+
+  bool operator==(const ChannelMediaOptions& o) const {
+#define BEGIN_COMPARE() bool b = true
+#define ADD_COMPARE(X) b = (b && (X == o.X))
+#define END_COMPARE()
+
+      BEGIN_COMPARE();
+      ADD_COMPARE(publishCameraTrack);
+      ADD_COMPARE(publishSecondaryCameraTrack);
+      ADD_COMPARE(publishMicrophoneTrack);
+#if defined(__ANDROID__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+      ADD_COMPARE(publishScreenCaptureVideo);
+      ADD_COMPARE(publishScreenCaptureAudio);
+#else
+      ADD_COMPARE(publishScreenTrack);
+      ADD_COMPARE(publishSecondaryScreenTrack);
+#endif
+      ADD_COMPARE(publishTrancodedVideoTrack);
+      ADD_COMPARE(publishCustomAudioTrack);
+      ADD_COMPARE(publishCustomAudioTrackId);
+      ADD_COMPARE(publishCustomVideoTrack);
+      ADD_COMPARE(publishEncodedVideoTrack);
+      ADD_COMPARE(publishMediaPlayerAudioTrack);
+      ADD_COMPARE(publishMediaPlayerVideoTrack);
+      ADD_COMPARE(autoSubscribeAudio);
+      ADD_COMPARE(autoSubscribeVideo);
+      ADD_COMPARE(publishMediaPlayerId);
+      ADD_COMPARE(enableAudioRecordingOrPlayout);
+      ADD_COMPARE(clientRoleType);
+      ADD_COMPARE(audienceLatencyLevel);
+      ADD_COMPARE(defaultVideoStreamType);
+      ADD_COMPARE(channelProfile);
+      ADD_COMPARE(audioDelayMs);
+      ADD_COMPARE(mediaPlayerAudioDelayMs);
+      ADD_COMPARE(token);
+      ADD_COMPARE(enableBuiltInMediaEncryption);
+      ADD_COMPARE(publishRhythmPlayerTrack);
+      ADD_COMPARE(customVideoTrackId);
+      ADD_COMPARE(isAudioFilterable);
+      ADD_COMPARE(isInteractiveAudience);
+      END_COMPARE();
+
+#undef BEGIN_COMPARE
+#undef ADD_COMPARE
+#undef END_COMPARE
+      return b;
+  }
+
+  ChannelMediaOptions& operator=(const ChannelMediaOptions& replace) {
+    if (this != &replace) {
+#define REPLACE_BY(X) ReplaceBy(&X, replace.X)
+
+        REPLACE_BY(publishCameraTrack);
+        REPLACE_BY(publishSecondaryCameraTrack);
+        REPLACE_BY(publishMicrophoneTrack);
+#if defined(__ANDROID__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+        REPLACE_BY(publishScreenCaptureVideo);
+        REPLACE_BY(publishScreenCaptureAudio);
+#else
+        REPLACE_BY(publishScreenTrack);
+        REPLACE_BY(publishSecondaryScreenTrack);
+#endif
+        REPLACE_BY(publishTrancodedVideoTrack);
+        REPLACE_BY(publishCustomAudioTrack);
+        REPLACE_BY(publishCustomAudioTrackId);
+        REPLACE_BY(publishCustomVideoTrack);
+        REPLACE_BY(publishEncodedVideoTrack);
+        REPLACE_BY(publishMediaPlayerAudioTrack);
+        REPLACE_BY(publishMediaPlayerVideoTrack);
+        REPLACE_BY(autoSubscribeAudio);
+        REPLACE_BY(autoSubscribeVideo);
+        REPLACE_BY(publishMediaPlayerId);
+        REPLACE_BY(enableAudioRecordingOrPlayout);
+        REPLACE_BY(clientRoleType);
+        REPLACE_BY(audienceLatencyLevel);
+        REPLACE_BY(defaultVideoStreamType);
+        REPLACE_BY(channelProfile);
+        REPLACE_BY(audioDelayMs);
+        REPLACE_BY(mediaPlayerAudioDelayMs);
+        REPLACE_BY(token);
+        REPLACE_BY(enableBuiltInMediaEncryption);
+        REPLACE_BY(publishRhythmPlayerTrack);
+        REPLACE_BY(customVideoTrackId);
+        REPLACE_BY(isAudioFilterable);
+        REPLACE_BY(isInteractiveAudience);
+#undef REPLACE_BY
+    }
+    return *this;
+  }
+};
+
+
+enum LOCAL_PROXY_MODE {
+  
+  ConnectivityFirst = 0,
+  
+  LocalOnly = 1,
+};
+
+enum PROXY_TYPE {
+  
+  NONE_PROXY_TYPE = 0,
+  
+  UDP_PROXY_TYPE = 1,
+  
+  TCP_PROXY_TYPE = 2,
+  
+  LOCAL_PROXY_TYPE = 3,
+  
+  TCP_PROXY_AUTO_FALLBACK_TYPE = 4,
+  
+  HTTP_PROXY_TYPE = 5,
+  
+  HTTPS_PROXY_TYPE = 6,
+};
+
+struct LogUploadServerInfo {
+  
+  const char* serverDomain;
+  
+  const char* serverPath;
+  
+  int serverPort;
+  
+  bool serverHttps;
+
+  LogUploadServerInfo() : serverDomain(NULL), serverPath(NULL), serverPort(0), serverHttps(true) {}
+
+  LogUploadServerInfo(const char* domain, const char* path, int port, bool https) : serverDomain(domain), serverPath(path), serverPort(port), serverHttps(https) {}
+};
+
+struct AdvancedConfigInfo {
+  
+  LogUploadServerInfo logUploadServer;
+};
+
+struct LocalAccessPointConfiguration {
+  
+  const char** ipList;
+  
+  int ipListSize;
+  
+  const char** domainList;
+  
+  int domainListSize;
+  
+  const char* verifyDomainName;
+  
+  LOCAL_PROXY_MODE mode;
+  
+  AdvancedConfigInfo advancedConfig;
+  LocalAccessPointConfiguration() : ipList(NULL), ipListSize(0), domainList(NULL), domainListSize(0), verifyDomainName(NULL), mode(ConnectivityFirst) {}
+};
+
+
+struct LeaveChannelOptions {
+  
+  bool stopAudioMixing;
+  
+  bool stopAllEffect;
+  
+  bool stopMicrophoneRecording;
+
+  LeaveChannelOptions() : stopAudioMixing(true), stopAllEffect(true), stopMicrophoneRecording(true) {}
+};
+
+
+class IRtcEngineEventHandler {
+ public:
+  virtual ~IRtcEngineEventHandler() {}
+
+  virtual const char* eventHandlerType() const { return "event_handler"; }
+
+  
+  virtual void onJoinChannelSuccess(const char* channel, uid_t uid, int elapsed) {
+    (void)channel;
+    (void)uid;
+    (void)elapsed;
+  }
+
+  
+  virtual void onRejoinChannelSuccess(const char* channel, uid_t uid, int elapsed) {
+    (void)channel;
+    (void)uid;
+    (void)elapsed;
+  }
+
+  
+  virtual void onProxyConnected(const char* channel, uid_t uid, PROXY_TYPE proxyType, const char* localProxyIp, int elapsed) {
+    (void)channel;
+    (void)uid;
+    (void)proxyType;
+    (void)localProxyIp;
+    (void)elapsed;
+  }
+
+  
+  virtual void onError(int err, const char* msg) {
+    (void)err;
+    (void)msg;
+  }
+
+  
+  virtual void onAudioQuality(uid_t uid, int quality, unsigned short delay,
+                              unsigned short lost) {
+    (void)uid;
+    (void)quality;
+    (void)delay;
+    (void)lost;
+  }
+
+  
+  virtual void onLastmileProbeResult(const LastmileProbeResult& result) {
+      (void)result;
+  }
+
+  
+  virtual void onAudioVolumeIndication(const AudioVolumeInfo* speakers, unsigned int speakerNumber,
+                                       int totalVolume) {
+    (void)speakers;
+    (void)speakerNumber;
+    (void)totalVolume;
+  }
+
+  
+  virtual void onLeaveChannel(const RtcStats& stats) { (void)stats; }
+
+  
+  virtual void onRtcStats(const RtcStats& stats) { (void)stats; }
+
+  
+  virtual void onAudioDeviceStateChanged(const char* deviceId, int deviceType, int deviceState) {
+    (void)deviceId;
+    (void)deviceType;
+    (void)deviceState;
+  }
+
+  
+  virtual void onAudioMixingPositionChanged(int64_t position) {}
+
+  
+  virtual void onAudioMixingFinished() __deprecated {}
+  
+  virtual void onAudioEffectFinished(int soundId) {}
+
+  
+  virtual void onVideoDeviceStateChanged(const char* deviceId, int deviceType, int deviceState) {
+    (void)deviceId;
+    (void)deviceType;
+    (void)deviceState;
+  }
+
+  
+  virtual void onNetworkQuality(uid_t uid, int txQuality, int rxQuality) {
+    (void)uid;
+    (void)txQuality;
+    (void)rxQuality;
+  }
+
+  
+  virtual void onIntraRequestReceived() {}
+
+  
+  virtual void onUplinkNetworkInfoUpdated(const UplinkNetworkInfo& info) {
+    (void)info;
+  }
+
+  
+  virtual void onDownlinkNetworkInfoUpdated(const DownlinkNetworkInfo& info) {
+    (void)info;
+  }
+
+  
+  virtual void onLastmileQuality(int quality) { (void)quality; }
+
+  
+  virtual void onFirstLocalVideoFrame(VIDEO_SOURCE_TYPE source, int width, int height, int elapsed) {
+    (void)source;
+    (void)width;
+    (void)height;
+    (void)elapsed;
+  }
+
+  
+  virtual void onFirstLocalVideoFramePublished(VIDEO_SOURCE_TYPE source, int elapsed) {
+    (void)source;
+    (void)elapsed;
+  }
+
+  
+  virtual void onFirstRemoteVideoDecoded(uid_t uid, int width, int height, int elapsed) __deprecated {
+    (void)uid;
+    (void)width;
+    (void)height;
+    (void)elapsed;
+  }
+
+  
+  virtual void onVideoSizeChanged(VIDEO_SOURCE_TYPE sourceType, uid_t uid, int width, int height, int rotation) {
+    (void)uid;
+    (void)width;
+    (void)height;
+    (void)rotation;
+  }
+
+  
+  virtual void onLocalVideoStateChanged(VIDEO_SOURCE_TYPE source, LOCAL_VIDEO_STREAM_STATE state, LOCAL_VIDEO_STREAM_ERROR error) {
+    (void)source;
+    (void)state;
+    (void)error;
+  }
+
+  
+  virtual void onRemoteVideoStateChanged(uid_t uid, REMOTE_VIDEO_STATE state, REMOTE_VIDEO_STATE_REASON reason, int elapsed) {
+    (void)uid;
+    (void)state;
+    (void)reason;
+    (void)elapsed;
+  }
+
+  
+  virtual void onFirstRemoteVideoFrame(uid_t userId, int width, int height, int elapsed) {
+    (void)userId;
+    (void)width;
+    (void)height;
+    (void)elapsed;
+  }
+
+  
+  virtual void onUserJoined(uid_t uid, int elapsed) {
+    (void)uid;
+    (void)elapsed;
+  }
+
+  
+  virtual void onUserOffline(uid_t uid, USER_OFFLINE_REASON_TYPE reason) {
+    (void)uid;
+    (void)reason;
+  }
+
+  
+  virtual void onUserMuteAudio(uid_t uid, bool muted) {
+    (void)uid;
+    (void)muted;
+  }
+
+  
+  virtual void onUserMuteVideo(uid_t userId, bool muted) {
+    (void)userId;
+    (void)muted;
+  }
+
+  
+  virtual void onUserEnableVideo(uid_t uid, bool enabled) __deprecated {
+    (void)uid;
+    (void)enabled;
+  }
+
+  
+  virtual void onUserStateChanged(uid_t uid, uint32_t state) {
+    (void)uid;
+    (void)state;
+  }
+
+  
+  virtual void onUserEnableLocalVideo(uid_t uid, bool enabled) __deprecated {
+    (void)uid;
+    (void)enabled;
+  }
+
+  
+  virtual void onLocalAudioStats(const LocalAudioStats& stats) {
+    (void)stats;
+  }
+
+  
+  virtual void onRemoteAudioStats(const RemoteAudioStats& stats) {
+    (void)stats;
+  }
+
+  
+  virtual void onLocalVideoStats(VIDEO_SOURCE_TYPE source, const LocalVideoStats& stats) {
+    (void)source;
+    (void)stats;
+  }
+
+  
+  virtual void onRemoteVideoStats(const RemoteVideoStats& stats) {
+    (void)stats;
+  }
+  
+  virtual void onCameraReady() {}
+  
+  virtual void onCameraFocusAreaChanged(int x, int y, int width, int height) {
+    (void)x;
+    (void)y;
+    (void)width;
+    (void)height;
+  }
+  
+  virtual void onCameraExposureAreaChanged(int x, int y, int width, int height) {
+    (void)x;
+    (void)y;
+    (void)width;
+    (void)height;
+  }
+#if defined(__ANDROID__) || (defined(__APPLE__) && TARGET_OS_IOS)
+  
+  virtual void onFacePositionChanged(int imageWidth, int imageHeight,
+                                     const Rectangle* vecRectangle, const int* vecDistance,
+                                     int numFaces) {
+    (void) imageWidth;
+    (void) imageHeight;
+    (void) vecRectangle;
+    (void) vecDistance;
+    (void) numFaces;
+  }
+#endif
+  
+  virtual void onVideoStopped() {}
+
+  
+  virtual void onAudioMixingStateChanged(AUDIO_MIXING_STATE_TYPE state, AUDIO_MIXING_REASON_TYPE reason) {
+    (void)state;
+    (void)reason;
+  }
+
+  
+  virtual void onRhythmPlayerStateChanged(RHYTHM_PLAYER_STATE_TYPE state, RHYTHM_PLAYER_ERROR_TYPE errorCode) {
+    (void)state;
+    (void)errorCode;
+  }
+
+  
+  virtual void onConnectionLost() {}
+
+  
+  virtual void onConnectionInterrupted() {}
+
+  
+  virtual void onConnectionBanned() {}
+
+  
+  virtual void onStreamMessage(uid_t userId, int streamId, const char* data, size_t length, uint64_t sentTs) {
+    (void)userId;
+    (void)streamId;
+    (void)data;
+    (void)length;
+    (void)sentTs;
+  }
+
+  
+  virtual void onStreamMessageError(uid_t userId, int streamId, int code, int missed, int cached) {
+    (void)userId;
+    (void)streamId;
+    (void)code;
+    (void)missed;
+    (void)cached;
+  }
+
+  
+  virtual void onRequestToken() {}
+
+  
+  virtual void onTokenPrivilegeWillExpire(const char* token) {
+    (void)token;
+  }
+
+  
+  virtual void onLicenseValidationFailure(LICENSE_ERROR_TYPE error) {
+    (void)error;
+  }
+
+  
+  virtual void onFirstLocalAudioFramePublished(int elapsed) {
+    (void)elapsed;
+  }
+
+  
+  virtual void onFirstRemoteAudioFrame(uid_t uid, int elapsed) {
+    (void)uid;
+    (void)elapsed;
+  }
+
+  
+  virtual void onFirstRemoteAudioDecoded(uid_t uid, int elapsed) {
+    (void)uid;
+    (void)elapsed;
+  }
+
+  
+  virtual void onLocalAudioStateChanged(LOCAL_AUDIO_STREAM_STATE state, LOCAL_AUDIO_STREAM_ERROR error) {
+    (void)state;
+    (void)error;
+  }
+
+  
+  virtual void onRemoteAudioStateChanged(uid_t uid, REMOTE_AUDIO_STATE state, REMOTE_AUDIO_STATE_REASON reason, int elapsed) {
+    (void)uid;
+    (void)state;
+    (void)reason;
+    (void)elapsed;
+  }
+
+  
+  virtual void onActiveSpeaker(uid_t userId) { (void)userId; }
+  
+  virtual void onContentInspectResult(media::CONTENT_INSPECT_RESULT result) { (void)result; }
+  
+  virtual void onSnapshotTaken(uid_t uid, const char* filePath, int width, int height, int errCode) {
+    (void)uid;
+    (void)filePath;
+    (void)width;
+    (void)height;
+    (void)errCode;
+  }
+  
+  virtual void onClientRoleChanged(CLIENT_ROLE_TYPE oldRole, CLIENT_ROLE_TYPE newRole, const ClientRoleOptions& newRoleOptions) {
+    (void)oldRole;
+    (void)newRole;
+    (void)newRoleOptions;
+  }
+  
+  virtual void onClientRoleChangeFailed(CLIENT_ROLE_CHANGE_FAILED_REASON reason, CLIENT_ROLE_TYPE currentRole) {
+    (void)reason;
+    (void)currentRole;
+  }
+  
+  virtual void onAudioDeviceVolumeChanged(MEDIA_DEVICE_TYPE deviceType, int volume, bool muted) {
+    (void)deviceType;
+    (void)volume;
+    (void)muted;
+  }
+
+  
+  virtual void onRtmpStreamingStateChanged(const char* url, RTMP_STREAM_PUBLISH_STATE state,
+                                           RTMP_STREAM_PUBLISH_ERROR_TYPE errCode) {
+    (void)url;
+    (void)state;
+    (void)errCode;
+  }
+
+  
+  virtual void onRtmpStreamingEvent(const char* url, RTMP_STREAMING_EVENT eventCode) {
+    (void)url;
+    (void)eventCode;
+  }
+
+  
+  virtual void onTranscodingUpdated() {}
+
+  
+  virtual void onAudioRoutingChanged(int routing) { (void)routing; }
+
+
+  
+  virtual void onChannelMediaRelayStateChanged(int state, int code) {
+    (void)state;
+    (void)code;
+  }
+
+  
+  virtual void onChannelMediaRelayEvent(int code) {
+    (void)code;
+  }
+  
+  virtual void onLocalPublishFallbackToAudioOnly(bool isFallbackOrRecover) {
+    (void)isFallbackOrRecover;
+  }
+  
+  virtual void onRemoteSubscribeFallbackToAudioOnly(uid_t uid, bool isFallbackOrRecover) {
+    (void)uid;
+    (void)isFallbackOrRecover;
+  }
+
+  
+  virtual void onRemoteAudioTransportStats(uid_t uid, unsigned short delay, unsigned short lost,
+                                           unsigned short rxKBitRate) {
+    (void)uid;
+    (void)delay;
+    (void)lost;
+    (void)rxKBitRate;
+  }
+
+  
+  virtual void onRemoteVideoTransportStats(uid_t uid, unsigned short delay, unsigned short lost,
+                                           unsigned short rxKBitRate) {
+    (void)uid;
+    (void)delay;
+    (void)lost;
+    (void)rxKBitRate;
+  }
+
+  
+  virtual void onConnectionStateChanged(
+      CONNECTION_STATE_TYPE state, CONNECTION_CHANGED_REASON_TYPE reason) {
+    (void)state;
+    (void)reason;
+  }
+
+  
+  virtual void onWlAccMessage(WLACC_MESSAGE_REASON reason, WLACC_SUGGEST_ACTION action, const char* wlAccMsg) {
+    (void)reason;
+    (void)action;
+    (void)wlAccMsg;
+  }
+
+  
+  virtual void onWlAccStats(WlAccStats currentStats, WlAccStats averageStats) {
+    (void)currentStats;
+    (void)averageStats;
+  }
+
+  
+  virtual void onNetworkTypeChanged(NETWORK_TYPE type) {
+    (void)type;
+  }
+
+  
+  virtual void onEncryptionError(ENCRYPTION_ERROR_TYPE errorType) {
+    (void)errorType;
+  }
+
+  
+  virtual void onPermissionError(PERMISSION_TYPE permissionType) {
+    (void)permissionType;
+  }
+
+  
+  virtual void onLocalUserRegistered(uid_t uid, const char* userAccount) {
+    (void)uid;
+    (void)userAccount;
+  }
+
+  
+  virtual void onUserInfoUpdated(uid_t uid, const UserInfo& info) {
+    (void)uid;
+    (void)info;
+  }
+  
+  virtual void onUploadLogResult(const char* requestId, bool success, UPLOAD_ERROR_REASON reason) {
+    (void)requestId;
+    (void)success;
+    (void)reason;
+  }
+
+  
+  virtual void onAudioSubscribeStateChanged(const char* channel, uid_t uid, STREAM_SUBSCRIBE_STATE oldState, STREAM_SUBSCRIBE_STATE newState, int elapseSinceLastState) {
+    (void)channel;
+    (void)uid;
+    (void)oldState;
+    (void)newState;
+    (void)elapseSinceLastState;
+  }
+
+  
+  virtual void onVideoSubscribeStateChanged(const char* channel, uid_t uid, STREAM_SUBSCRIBE_STATE oldState, STREAM_SUBSCRIBE_STATE newState, int elapseSinceLastState) {
+    (void)channel;
+    (void)uid;
+    (void)oldState;
+    (void)newState;
+    (void)elapseSinceLastState;
+  }
+
+  
+  virtual void onAudioPublishStateChanged(const char* channel, STREAM_PUBLISH_STATE oldState, STREAM_PUBLISH_STATE newState, int elapseSinceLastState) {
+    (void)channel;
+    (void)oldState;
+    (void)newState;
+    (void)elapseSinceLastState;
+  }
+
+  
+  virtual void onVideoPublishStateChanged(VIDEO_SOURCE_TYPE source, const char* channel, STREAM_PUBLISH_STATE oldState, STREAM_PUBLISH_STATE newState, int elapseSinceLastState) {
+    (void)source;
+    (void)channel;
+    (void)oldState;
+    (void)newState;
+    (void)elapseSinceLastState;
+  }
+  
+  virtual void onExtensionEvent(const char* provider, const char* extension, const char* key, const char* value) {
+    (void)provider;
+    (void)extension;
+    (void)key;
+    (void)value;
+  }
+  
+  virtual void onExtensionStarted(const char* provider, const char* extension) {
+    (void)provider;
+    (void)extension;
+  }
+  
+  virtual void onExtensionStopped(const char* provider, const char* extension) {
+    (void)provider;
+    (void)extension;
+  }
+  
+  virtual void onExtensionError(const char* provider, const char* extension, int error, const char* message) {
+    (void)provider;
+    (void)extension;
+    (void)error;
+    (void)message;
+  }
+  
+  virtual void onUserAccountUpdated(uid_t uid, const char* userAccount){
+    (void)uid;
+    (void)userAccount;
+  }
+ 
+  
+  virtual void onLocalVideoTranscoderError(const TranscodingVideoStream& stream, VIDEO_TRANSCODER_ERROR error){
+    (void)stream;
+    (void)error;
+  }
+
+  
+  virtual void onVideoRenderingTracingResult(uid_t uid, MEDIA_TRACE_EVENT currentEvent, VideoRenderingTracingInfo tracingInfo) {
+    (void)uid;
+    (void)currentEvent;
+    (void)tracingInfo;
+  }
+};
+
+
+class IVideoDeviceCollection {
+ public:
+  virtual ~IVideoDeviceCollection() {}
+
+  
+  virtual int getCount() = 0;
+
+  
+  virtual int setDevice(const char deviceIdUTF8[MAX_DEVICE_ID_LENGTH]) = 0;
+
+  
+  virtual int getDevice(int index, char deviceNameUTF8[MAX_DEVICE_ID_LENGTH],
+                        char deviceIdUTF8[MAX_DEVICE_ID_LENGTH]) = 0;
+
+  
+  virtual void release() = 0;
+};
+
+
+class IVideoDeviceManager {
+ public:
+  virtual ~IVideoDeviceManager() {}
+  
+  virtual IVideoDeviceCollection* enumerateVideoDevices() = 0;
+
+  
+  virtual int setDevice(const char deviceIdUTF8[MAX_DEVICE_ID_LENGTH]) = 0;
+
+  
+  virtual int getDevice(char deviceIdUTF8[MAX_DEVICE_ID_LENGTH]) = 0;
+
+#if defined(_WIN32) || (defined(__linux__) && !defined(__ANDROID__)) || \
+    (defined(__APPLE__) && TARGET_OS_MAC && !TARGET_OS_IPHONE)
+  
+  virtual int numberOfCapabilities(const char* deviceIdUTF8) = 0;
+
+  
+  virtual int getCapability(const char* deviceIdUTF8, const uint32_t deviceCapabilityNumber, VideoFormat& capability) = 0;
+#endif
+  
+  virtual int startDeviceTest(view_t hwnd) = 0;
+
+  
+  virtual int stopDeviceTest() = 0;
+
+  
+  virtual void release() = 0;
+};
+
+
+class IRtcEngineEventHandlerEx;
+
+struct RtcEngineContext {
+  
+  IRtcEngineEventHandler* eventHandler;
+  
+  const char* appId;
+  
+  void* context;
+  
+  CHANNEL_PROFILE_TYPE channelProfile;
+
+  
+  const char* license;
+
+  
+  AUDIO_SCENARIO_TYPE audioScenario;
+  
+  unsigned int areaCode;
+
+  
+  commons::LogConfig logConfig;
+
+  
+  Optional<THREAD_PRIORITY_TYPE> threadPriority;
+
+  
+  bool useExternalEglContext;
+
+  
+  bool domainLimit;
+
+  
+  bool autoRegisterAgoraExtensions;
+
+  RtcEngineContext()
+      : eventHandler(NULL), appId(NULL), context(NULL),
+        channelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING),
+        license(NULL),
+        audioScenario(AUDIO_SCENARIO_DEFAULT),
+        areaCode(AREA_CODE_GLOB),
+        logConfig(), useExternalEglContext(false), domainLimit(false), autoRegisterAgoraExtensions(true) {}
+};
+
+
+class IMetadataObserver {
+public:
+    
+    enum METADATA_TYPE
+    {
+        
+        UNKNOWN_METADATA = -1,
+        
+        VIDEO_METADATA = 0,
+    };
+    
+    enum MAX_METADATA_SIZE_TYPE
+    {
+        INVALID_METADATA_SIZE_IN_BYTE = -1,
+        DEFAULT_METADATA_SIZE_IN_BYTE = 512,
+        MAX_METADATA_SIZE_IN_BYTE = 1024
+    };
+
+    
+    struct Metadata
+    {
+        
+        unsigned int uid;
+        
+        unsigned int size;
+        
+        unsigned char *buffer;
+        
+        long long timeStampMs;
+    };
+
+    virtual ~IMetadataObserver() {}
+
+   
+    virtual int getMaxMetadataSize() { return DEFAULT_METADATA_SIZE_IN_BYTE; }
+
+    
+    virtual bool onReadyToSendMetadata(Metadata &metadata, VIDEO_SOURCE_TYPE source_type) = 0;
+
+    
+    virtual void onMetadataReceived(const Metadata &metadata) = 0;
+};
+
+
+
+enum DIRECT_CDN_STREAMING_ERROR {
+  
+  DIRECT_CDN_STREAMING_ERROR_OK = 0,
+  
+  DIRECT_CDN_STREAMING_ERROR_FAILED = 1,
+  
+  DIRECT_CDN_STREAMING_ERROR_AUDIO_PUBLICATION = 2,
+  
+  DIRECT_CDN_STREAMING_ERROR_VIDEO_PUBLICATION = 3,
+
+  DIRECT_CDN_STREAMING_ERROR_NET_CONNECT = 4,
+  
+  DIRECT_CDN_STREAMING_ERROR_BAD_NAME = 5,
+};
+
+
+
+enum DIRECT_CDN_STREAMING_STATE {
+
+  DIRECT_CDN_STREAMING_STATE_IDLE = 0,
+
+  DIRECT_CDN_STREAMING_STATE_RUNNING = 1,
+
+  DIRECT_CDN_STREAMING_STATE_STOPPED = 2,
+
+  DIRECT_CDN_STREAMING_STATE_FAILED = 3,
+
+  DIRECT_CDN_STREAMING_STATE_RECOVERING = 4,
+};
+
+
+struct DirectCdnStreamingStats {
+    
+    int videoWidth;
+
+    
+    int videoHeight;
+
+    
+    int fps;
+
+    
+    int videoBitrate;
+
+    
+    int audioBitrate;
+};
+
+
+class IDirectCdnStreamingEventHandler {
+ public:
+  virtual ~IDirectCdnStreamingEventHandler() {}
+
+  
+  virtual void onDirectCdnStreamingStateChanged(DIRECT_CDN_STREAMING_STATE state, DIRECT_CDN_STREAMING_ERROR error, const char* message)  {
+    (void)state;
+    (void)error;
+    (void)message;
+  };
+
+  virtual void onDirectCdnStreamingStats(const DirectCdnStreamingStats& stats)  {
+    (void)stats;
+  };
+};
+
+
+struct DirectCdnStreamingMediaOptions {
+  
+  Optional<bool> publishCameraTrack;
+  
+  Optional<bool> publishMicrophoneTrack;
+  
+  Optional<bool> publishCustomAudioTrack;
+  
+  Optional<bool> publishCustomVideoTrack;
+  
+  Optional<bool> publishMediaPlayerAudioTrack;
+  
+  Optional<int> publishMediaPlayerId;
+  
+  Optional<video_track_id_t> customVideoTrackId;
+
+  DirectCdnStreamingMediaOptions() {}
+  ~DirectCdnStreamingMediaOptions() {}
+
+  void SetAll(const DirectCdnStreamingMediaOptions& change) {
+#define SET_FROM(X) SetFrom(&X, change.X)
+      SET_FROM(publishCameraTrack);
+      SET_FROM(publishMicrophoneTrack);
+      SET_FROM(publishCustomAudioTrack);
+      SET_FROM(publishCustomVideoTrack);
+      SET_FROM(publishMediaPlayerAudioTrack);
+      SET_FROM(publishMediaPlayerId);
+      SET_FROM(customVideoTrackId);
+#undef SET_FROM
+  }
+
+  bool operator==(const DirectCdnStreamingMediaOptions& o) const {
+#define BEGIN_COMPARE() bool b = true
+#define ADD_COMPARE(X) b = (b && (X == o.X))
+#define END_COMPARE()
+
+      BEGIN_COMPARE();
+      ADD_COMPARE(publishCameraTrack);
+      ADD_COMPARE(publishMicrophoneTrack);
+      ADD_COMPARE(publishCustomAudioTrack);
+      ADD_COMPARE(publishCustomVideoTrack);
+      ADD_COMPARE(publishMediaPlayerAudioTrack);
+      ADD_COMPARE(customVideoTrackId);
+      ADD_COMPARE(publishMediaPlayerId);
+      END_COMPARE();
+
+#undef BEGIN_COMPARE
+#undef ADD_COMPARE
+#undef END_COMPARE
+      return b;
+  }
+
+  DirectCdnStreamingMediaOptions& operator=(const DirectCdnStreamingMediaOptions& replace) {
+    if (this != &replace) {
+#define REPLACE_BY(X) ReplaceBy(&X, replace.X)
+
+        REPLACE_BY(publishCameraTrack);
+        REPLACE_BY(publishMicrophoneTrack);
+        REPLACE_BY(publishCustomAudioTrack);
+        REPLACE_BY(publishCustomVideoTrack);
+        REPLACE_BY(publishMediaPlayerAudioTrack);
+        REPLACE_BY(customVideoTrackId);
+        REPLACE_BY(publishMediaPlayerId);
+#undef REPLACE_BY
+    }
+    return *this;
+  }
+};
+
+
+struct ExtensionInfo {
+  
+  agora::media::MEDIA_SOURCE_TYPE mediaSourceType;
+
+  
+  uid_t remoteUid;
+
+  
+  const char* channelId;
+
+  
+  uid_t localUid;
+
+  ExtensionInfo()
+      : mediaSourceType(agora::media::UNKNOWN_MEDIA_SOURCE),
+        remoteUid(0),
+        channelId(NULL),
+        localUid(0) {}
+};
+
+class IMediaPlayer;
+class IMediaRecorder;
+
+
+class IRtcEngine : public agora::base::IEngineBase {
+ public:
+  
+  virtual void release(bool sync = false) = 0;
+
+  
+  virtual int initialize(const RtcEngineContext& context) = 0;
+
+  
+  virtual int queryInterface(INTERFACE_ID_TYPE iid, void** inter) = 0;
+
+
+  
+  virtual const char* getVersion(int* build) = 0;
+
+  
+  virtual const char* getErrorDescription(int code) = 0;
+
+  
+  virtual int queryCodecCapability(CodecCapInfo* codec_info, int& size) = 0;
+
+  
+  virtual int joinChannel(const char* token, const char* channelId, const char* info,
+                          uid_t uid) = 0;
+
+  
+  virtual int joinChannel(const char* token, const char* channelId, uid_t uid,
+                          const ChannelMediaOptions& options) = 0;
+
+  
+  virtual int updateChannelMediaOptions(const ChannelMediaOptions& options) = 0;
+
+  
+  virtual int leaveChannel() = 0;
+
+  
+  virtual int leaveChannel(const LeaveChannelOptions& options) = 0;
+
+  
+  virtual int renewToken(const char* token) = 0;
+
+  
+  virtual int setChannelProfile(CHANNEL_PROFILE_TYPE profile) = 0;
+
+  
+  virtual int setClientRole(CLIENT_ROLE_TYPE role) = 0;
+
+  
+  virtual int setClientRole(CLIENT_ROLE_TYPE role, const ClientRoleOptions& options) = 0;
+
+  
+  virtual int startEchoTest() = 0;
+
+  
+  virtual int startEchoTest(int intervalInSeconds) = 0;
+
+  
+  virtual int startEchoTest(const EchoTestConfiguration& config) = 0;
+
+  
+  virtual int stopEchoTest() = 0;
+
+#if defined(__APPLE__) && TARGET_OS_IOS
+  
+  virtual int enableMultiCamera(bool enabled, const CameraCapturerConfiguration& config) = 0;
+#endif
+  
+  virtual int enableVideo() = 0;
+
+  
+  virtual int disableVideo() = 0;
+
+  
+  virtual int startPreview() = 0;
+
+  
+  virtual int startPreview(VIDEO_SOURCE_TYPE sourceType) = 0;
+
+  
+  virtual int stopPreview() = 0;
+
+  
+  virtual int stopPreview(VIDEO_SOURCE_TYPE sourceType) = 0;
+
+  
+  virtual int startLastmileProbeTest(const LastmileProbeConfig& config) = 0;
+
+  
+  virtual int stopLastmileProbeTest() = 0;
+
+  
+  virtual int setVideoEncoderConfiguration(const VideoEncoderConfiguration& config) = 0;
+
+  
+  virtual int setBeautyEffectOptions(bool enabled, const BeautyOptions& options, agora::media::MEDIA_SOURCE_TYPE type = agora::media::PRIMARY_CAMERA_SOURCE) = 0;
+  
+  virtual int setLowlightEnhanceOptions(bool enabled, const LowlightEnhanceOptions& options, agora::media::MEDIA_SOURCE_TYPE type = agora::media::PRIMARY_CAMERA_SOURCE) = 0;
+  
+  virtual int setVideoDenoiserOptions(bool enabled, const VideoDenoiserOptions& options, agora::media::MEDIA_SOURCE_TYPE type = agora::media::PRIMARY_CAMERA_SOURCE) = 0;
+  
+  virtual int setColorEnhanceOptions(bool enabled, const ColorEnhanceOptions& options, agora::media::MEDIA_SOURCE_TYPE type = agora::media::PRIMARY_CAMERA_SOURCE) = 0;
+
+  
+  virtual int enableVirtualBackground(bool enabled, VirtualBackgroundSource backgroundSource, SegmentationProperty segproperty, agora::media::MEDIA_SOURCE_TYPE type = agora::media::PRIMARY_CAMERA_SOURCE) = 0;
+
+  
+  virtual int setupRemoteVideo(const VideoCanvas& canvas) = 0;
+
+  
+  virtual int setupLocalVideo(const VideoCanvas& canvas) = 0;
+
+  
+  virtual int setVideoScenario(VIDEO_APPLICATION_SCENARIO_TYPE scenarioType) = 0;
+
+  
+  virtual int enableAudio() = 0;
+
+  
+  virtual int disableAudio() = 0;
+
+  
+  virtual int setAudioProfile(AUDIO_PROFILE_TYPE profile, AUDIO_SCENARIO_TYPE scenario) __deprecated = 0;
+  
+  
+  virtual int setAudioProfile(AUDIO_PROFILE_TYPE profile) = 0;
+  
+  virtual int setAudioScenario(AUDIO_SCENARIO_TYPE scenario) = 0;
+  
+  virtual int enableLocalAudio(bool enabled) = 0;
+
+  
+  virtual int muteLocalAudioStream(bool mute) = 0;
+
+  
+  virtual int muteAllRemoteAudioStreams(bool mute) = 0;
+
+  
+  virtual int setDefaultMuteAllRemoteAudioStreams(bool mute) __deprecated = 0;
+
+  
+  virtual int muteRemoteAudioStream(uid_t uid, bool mute) = 0;
+
+  
+  virtual int muteLocalVideoStream(bool mute) = 0;
+
+  
+  virtual int enableLocalVideo(bool enabled) = 0;
+
+  
+  virtual int muteAllRemoteVideoStreams(bool mute) = 0;
+
+  
+  virtual int setDefaultMuteAllRemoteVideoStreams(bool mute) __deprecated = 0;
+
+  
+  virtual int muteRemoteVideoStream(uid_t uid, bool mute) = 0;
+
+  
+  virtual int setRemoteVideoStreamType(uid_t uid, VIDEO_STREAM_TYPE streamType) = 0;
+
+  
+  virtual int setRemoteVideoSubscriptionOptions(uid_t uid, const VideoSubscriptionOptions &options) = 0;
+
+  
+  virtual int setRemoteDefaultVideoStreamType(VIDEO_STREAM_TYPE streamType) = 0;
+
+  
+  virtual int setSubscribeAudioBlocklist(uid_t* uidList, int uidNumber) = 0;
+
+  
+  virtual int setSubscribeAudioAllowlist(uid_t* uidList, int uidNumber) = 0;
+
+  
+  virtual int setSubscribeVideoBlocklist(uid_t* uidList, int uidNumber) = 0;
+
+  
+  virtual int setSubscribeVideoAllowlist(uid_t* uidList, int uidNumber) = 0;
+
+  
+  virtual int enableAudioVolumeIndication(int interval, int smooth, bool reportVad) = 0;
+
+  
+  virtual int startAudioRecording(const char* filePath,
+                                  AUDIO_RECORDING_QUALITY_TYPE quality) = 0;
+  
+  virtual int startAudioRecording(const char* filePath,
+                                  int sampleRate,
+                                  AUDIO_RECORDING_QUALITY_TYPE quality) = 0;
+
+  
+  virtual int startAudioRecording(const AudioRecordingConfiguration& config) = 0;
+
+  
+  virtual int registerAudioEncodedFrameObserver(const AudioEncodedFrameObserverConfig& config,  IAudioEncodedFrameObserver *observer) = 0;
+
+  
+  virtual int stopAudioRecording() = 0;
+  
+  
+  virtual agora_refptr<IMediaPlayer> createMediaPlayer() = 0;
+
+  
+  virtual int destroyMediaPlayer(agora_refptr<IMediaPlayer> media_player) = 0;
+
+  
+  virtual agora_refptr<IMediaRecorder> createLocalMediaRecorder(const RtcConnection& connection) = 0;
+
+  
+  virtual agora_refptr<IMediaRecorder> createRemoteMediaRecorder(const char* channelId, uid_t uid) = 0;
+
+  
+  virtual int destroyMediaRecorder(agora_refptr<IMediaRecorder> mediaRecorder) = 0;
+
+  
+  virtual int startAudioMixing(const char* filePath, bool loopback, int cycle) = 0;
+
+  
+  virtual int startAudioMixing(const char* filePath, bool loopback, int cycle, int startPos) = 0;
+
+  
+  virtual int stopAudioMixing() = 0;
+
+  
+  virtual int pauseAudioMixing() = 0;
+
+  
+  virtual int resumeAudioMixing() = 0;
+
+  
+  virtual int selectAudioTrack(int index) = 0;
+  
+  virtual int getAudioTrackCount() = 0;
+
+  
+  virtual int adjustAudioMixingVolume(int volume) = 0;
+
+  
+  virtual int adjustAudioMixingPublishVolume(int volume) = 0;
+
+  
+  virtual int getAudioMixingPublishVolume() = 0;
+
+  
+  virtual int adjustAudioMixingPlayoutVolume(int volume) = 0;
+
+  
+  virtual int getAudioMixingPlayoutVolume() = 0;
+
+  
+  virtual int getAudioMixingDuration() = 0;
+
+  
+  virtual int getAudioMixingCurrentPosition() = 0;
+
+  
+  virtual int setAudioMixingPosition(int pos ) = 0;
+
+  
+  virtual int setAudioMixingDualMonoMode(media::AUDIO_MIXING_DUAL_MONO_MODE mode) = 0;
+
+  
+  virtual int setAudioMixingPitch(int pitch) = 0;
+  
+  virtual int getEffectsVolume() = 0;
+  
+  virtual int setEffectsVolume(int volume) = 0;
+  
+  virtual int preloadEffect(int soundId, const char* filePath, int startPos = 0) = 0;
+  
+  virtual int playEffect(int soundId, const char* filePath, int loopCount, double pitch, double pan, int gain, bool publish = false, int startPos = 0) = 0;
+  
+  virtual int playAllEffects(int loopCount, double pitch, double pan, int gain, bool publish = false) = 0;
+
+  
+  virtual int getVolumeOfEffect(int soundId) = 0;
+
+  
+  virtual int setVolumeOfEffect(int soundId, int volume) = 0;
+  
+  virtual int pauseEffect(int soundId) = 0;
+  
+  virtual int pauseAllEffects() = 0;
+  
+  virtual int resumeEffect(int soundId) = 0;
+  
+  virtual int resumeAllEffects() = 0;
+  
+  virtual int stopEffect(int soundId) = 0;
+  
+  virtual int stopAllEffects() = 0;
+  
+  virtual int unloadEffect(int soundId) = 0;
+  
+  virtual int unloadAllEffects() = 0;
+  
+  virtual int getEffectDuration(const char* filePath) = 0;
+  
+  virtual int setEffectPosition(int soundId, int pos) = 0;
+  
+  virtual int getEffectCurrentPosition(int soundId) = 0;
+  
+  virtual int enableSoundPositionIndication(bool enabled) = 0;
+  
+  virtual int setRemoteVoicePosition(uid_t uid, double pan, double gain) = 0;
+
+  
+  virtual int enableSpatialAudio(bool enabled) = 0;
+
+  
+  virtual int setRemoteUserSpatialAudioParams(uid_t uid, const agora::SpatialAudioParams& params) = 0;
+
+  
+  virtual int setVoiceBeautifierPreset(VOICE_BEAUTIFIER_PRESET preset) = 0;
+
+  
+  virtual int setAudioEffectPreset(AUDIO_EFFECT_PRESET preset) = 0;
+
+  
+  virtual int setVoiceConversionPreset(VOICE_CONVERSION_PRESET preset) = 0;
+
+  
+  virtual int setAudioEffectParameters(AUDIO_EFFECT_PRESET preset, int param1, int param2) = 0;
+
+  
+  virtual int setVoiceBeautifierParameters(VOICE_BEAUTIFIER_PRESET preset,
+                                            int param1, int param2) = 0;
+
+  
+  virtual int setVoiceConversionParameters(VOICE_CONVERSION_PRESET preset,
+                                            int param1, int param2) = 0;
+
+  
+  virtual int setLocalVoicePitch(double pitch) = 0;
+
+  
+  virtual int setLocalVoiceFormant(double formantRatio) = 0;
+
+  
+  virtual int setLocalVoiceEqualization(AUDIO_EQUALIZATION_BAND_FREQUENCY bandFrequency,
+                                        int bandGain) = 0;
+
+  
+  virtual int setLocalVoiceReverb(AUDIO_REVERB_TYPE reverbKey, int value) = 0;
+  
+  virtual int setHeadphoneEQPreset(HEADPHONE_EQUALIZER_PRESET preset) = 0;
+  
+  virtual int setHeadphoneEQParameters(int lowGain, int highGain) = 0;
+
+  
+  virtual int setLogFile(const char* filePath) = 0;
+
+  
+  virtual int setLogFilter(unsigned int filter) = 0;
+
+  
+  virtual int setLogLevel(commons::LOG_LEVEL level) = 0;
+
+  
+  virtual int setLogFileSize(unsigned int fileSizeInKBytes) = 0;
+
+  
+  virtual int uploadLogFile(agora::util::AString& requestId) = 0;
+
+  
+  virtual int setLocalRenderMode(media::base::RENDER_MODE_TYPE renderMode, VIDEO_MIRROR_MODE_TYPE mirrorMode) = 0;
+  
+  virtual int setRemoteRenderMode(uid_t uid, media::base::RENDER_MODE_TYPE renderMode,
+                                  VIDEO_MIRROR_MODE_TYPE mirrorMode) = 0;
+
+  
+
+  
+  virtual int setLocalRenderMode(media::base::RENDER_MODE_TYPE renderMode) = 0;
+
+  
+  virtual int setLocalVideoMirrorMode(VIDEO_MIRROR_MODE_TYPE mirrorMode) = 0;
+
+  
+  virtual int enableDualStreamMode(bool enabled) = 0;
+
+  
+  virtual int enableDualStreamMode(bool enabled, const SimulcastStreamConfig& streamConfig) = 0;
+
+
+  
+  virtual int setDualStreamMode(SIMULCAST_STREAM_MODE mode) = 0;
+
+  
+  virtual int setDualStreamMode(SIMULCAST_STREAM_MODE mode,
+                                 const SimulcastStreamConfig& streamConfig) = 0;
+
+  
+  virtual int enableCustomAudioLocalPlayback(track_id_t trackId, bool enabled) = 0;
+
+  
+  virtual int setRecordingAudioFrameParameters(int sampleRate, int channel,
+                                               RAW_AUDIO_FRAME_OP_MODE_TYPE mode,
+                                               int samplesPerCall) = 0;
+
+  
+  virtual int setPlaybackAudioFrameParameters(int sampleRate, int channel,
+                                              RAW_AUDIO_FRAME_OP_MODE_TYPE mode,
+                                              int samplesPerCall) = 0;
+
+  
+  virtual int setMixedAudioFrameParameters(int sampleRate, int channel, int samplesPerCall) = 0;
+
+  
+  virtual int setEarMonitoringAudioFrameParameters(int sampleRate, int channel,
+                                                   RAW_AUDIO_FRAME_OP_MODE_TYPE mode,
+                                                   int samplesPerCall) = 0;
+
+  
+  virtual int setPlaybackAudioFrameBeforeMixingParameters(int sampleRate, int channel) = 0;
+
+  
+  virtual int enableAudioSpectrumMonitor(int intervalInMS = 100) = 0;
+  
+  virtual int disableAudioSpectrumMonitor() = 0;
+
+  
+  virtual int registerAudioSpectrumObserver(agora::media::IAudioSpectrumObserver * observer) = 0;
+  
+  virtual int unregisterAudioSpectrumObserver(agora::media::IAudioSpectrumObserver * observer) = 0;
+
+  
+  virtual int adjustRecordingSignalVolume(int volume) = 0;
+
+  
+  virtual int muteRecordingSignal(bool mute) = 0;
+
+  
+  virtual int adjustPlaybackSignalVolume(int volume) = 0;
+
+  
+  virtual int adjustUserPlaybackSignalVolume(unsigned int uid, int volume) = 0;
+
+  
+  virtual int setLocalPublishFallbackOption(STREAM_FALLBACK_OPTIONS option) = 0;
+
+  
+  virtual int setRemoteSubscribeFallbackOption(STREAM_FALLBACK_OPTIONS option) = 0;
+
+  
+  virtual int setHighPriorityUserList(uid_t* uidList, int uidNum, STREAM_FALLBACK_OPTIONS option) = 0;
+
+  
+  virtual int enableLoopbackRecording(bool enabled, const char* deviceName = NULL) = 0;
+
+
+  
+  virtual int adjustLoopbackSignalVolume(int volume) = 0;
+
+  
+  virtual int getLoopbackRecordingVolume() = 0;
+
+  
+  virtual int enableInEarMonitoring(bool enabled, int includeAudioFilters) = 0;
+
+  
+  virtual int setInEarMonitoringVolume(int volume) = 0;
+
+#if defined (_WIN32) || defined(__linux__) || defined(__ANDROID__)
+  virtual int loadExtensionProvider(const char* path, bool unload_after_use = false) = 0;
+#endif
+
+  
+  virtual int setExtensionProviderProperty(
+      const char* provider, const char* key, const char* value) = 0;
+
+  
+  virtual int registerExtension(const char* provider, const char* extension,
+                        agora::media::MEDIA_SOURCE_TYPE type = agora::media::UNKNOWN_MEDIA_SOURCE) = 0;
+
+  
+  virtual int enableExtension(
+      const char* provider, const char* extension, bool enable=true, agora::media::MEDIA_SOURCE_TYPE type = agora::media::UNKNOWN_MEDIA_SOURCE) = 0;
+
+  
+  virtual int setExtensionProperty(
+      const char* provider, const char* extension,
+      const char* key, const char* value, agora::media::MEDIA_SOURCE_TYPE type = agora::media::UNKNOWN_MEDIA_SOURCE) = 0;
+
+  
+  virtual int getExtensionProperty(
+      const char* provider, const char* extension,
+      const char* key, char* value, int buf_len, agora::media::MEDIA_SOURCE_TYPE type = agora::media::UNKNOWN_MEDIA_SOURCE) = 0;
+
+  
+  virtual int enableExtension(const char* provider, const char* extension, const ExtensionInfo& extensionInfo, bool enable = true) = 0;
+
+  
+  virtual int setExtensionProperty(const char* provider, const char* extension, const ExtensionInfo& extensionInfo, const char* key, const char* value) = 0;
+
+  
+  virtual int getExtensionProperty(const char* provider, const char* extension, const ExtensionInfo& extensionInfo, const char* key, char* value, int buf_len)  = 0;
+
+  
+  virtual int setCameraCapturerConfiguration(const CameraCapturerConfiguration& config) = 0;
+
+
+  
+  virtual video_track_id_t createCustomVideoTrack() = 0;
+
+  
+  virtual video_track_id_t createCustomEncodedVideoTrack(const SenderOptions& sender_option) = 0;
+
+  
+  virtual int destroyCustomVideoTrack(video_track_id_t video_track_id) = 0;
+
+  
+  virtual int destroyCustomEncodedVideoTrack(video_track_id_t video_track_id) = 0;
+
+
+#if defined(__ANDROID__) || (defined(__APPLE__) && TARGET_OS_IOS)
+
+  
+  virtual int switchCamera() = 0;
+
+  
+  virtual bool isCameraZoomSupported() = 0;
+
+  
+  virtual bool isCameraFaceDetectSupported() = 0;
+
+  
+  virtual bool isCameraTorchSupported() = 0;
+
+  
+  virtual bool isCameraFocusSupported() = 0;
+
+  
+  virtual bool isCameraAutoFocusFaceModeSupported() = 0;
+
+  
+  virtual int setCameraZoomFactor(float factor) = 0;
+
+  
+  virtual int enableFaceDetection(bool enabled) = 0;
+
+  
+  virtual float getCameraMaxZoomFactor() = 0;
+
+  
+  virtual int setCameraFocusPositionInPreview(float positionX, float positionY) = 0;
+
+  
+  virtual int setCameraTorchOn(bool isOn) = 0;
+
+  
+  virtual int setCameraAutoFocusFaceModeEnabled(bool enabled) = 0;
+
+  
+  virtual bool isCameraExposurePositionSupported() = 0;
+
+  
+  virtual int setCameraExposurePosition(float positionXinView, float positionYinView) = 0;
+
+#if defined(__APPLE__)
+  
+  virtual bool isCameraAutoExposureFaceModeSupported() = 0;
+
+
+  
+  virtual int setCameraAutoExposureFaceModeEnabled(bool enabled) = 0;
+#endif
+
+  
+  virtual int setDefaultAudioRouteToSpeakerphone(bool defaultToSpeaker) = 0;
+
+  
+  virtual int setEnableSpeakerphone(bool speakerOn) = 0;
+
+  
+  virtual bool isSpeakerphoneEnabled() = 0;
+
+#endif  
+
+#if defined(_WIN32) || (defined(__APPLE__) && TARGET_OS_MAC && !TARGET_OS_IPHONE)
+  
+  virtual IScreenCaptureSourceList* getScreenCaptureSources(const SIZE& thumbSize, const SIZE& iconSize, const bool includeScreen) = 0;
+#endif 
+#if (defined(__APPLE__) && TARGET_OS_IOS)
+  
+  virtual int setAudioSessionOperationRestriction(AUDIO_SESSION_OPERATION_RESTRICTION restriction) = 0;
+#endif 
+
+#if defined(_WIN32) || (defined(__APPLE__) && !TARGET_OS_IPHONE && TARGET_OS_MAC)
+
+  
+  virtual int startScreenCaptureByDisplayId(uint32_t displayId, const Rectangle& regionRect,
+                                            const ScreenCaptureParameters& captureParams) = 0;
+
+#endif  
+
+#if defined(_WIN32)
+
+  
+  virtual int startScreenCaptureByScreenRect(const Rectangle& screenRect,
+                                             const Rectangle& regionRect,
+                                             const ScreenCaptureParameters& captureParams) = 0;
+
+#endif  
+
+#if defined(__ANDROID__)
+  
+  virtual int getAudioDeviceInfo(DeviceInfo& deviceInfo) = 0;
+
+#endif  
+
+#if defined(_WIN32) || (defined(__APPLE__) && TARGET_OS_MAC && !TARGET_OS_IPHONE)
+
+ 
+  virtual int startScreenCaptureByWindowId(view_t windowId, const Rectangle& regionRect,
+                                           const ScreenCaptureParameters& captureParams) = 0;
+
+  
+  virtual int setScreenCaptureContentHint(VIDEO_CONTENT_HINT contentHint) = 0;
+
+  
+  virtual int updateScreenCaptureRegion(const Rectangle& regionRect) = 0;
+
+  
+  virtual int updateScreenCaptureParameters(const ScreenCaptureParameters& captureParams) = 0;
+#endif 
+
+#if defined(__ANDROID__) || (defined(__APPLE__) && TARGET_OS_IOS)
+  
+  virtual int startScreenCapture(const ScreenCaptureParameters2& captureParams) = 0;
+
+  
+  virtual int updateScreenCapture(const ScreenCaptureParameters2& captureParams) = 0;
+    
+   
+  virtual int queryScreenCaptureCapability() = 0;
+#endif
+
+#if defined(_WIN32) || defined(__APPLE__) || defined(__ANDROID__)
+  
+  virtual int setScreenCaptureScenario(SCREEN_SCENARIO_TYPE screenScenario) = 0;
+  
+  
+  virtual int stopScreenCapture() = 0;
+#endif  
+
+  
+  virtual int getCallId(agora::util::AString& callId) = 0;
+
+  
+  virtual int rate(const char* callId, int rating,
+                   const char* description) = 0;  
+
+  
+  virtual int complain(const char* callId, const char* description) = 0;
+
+  
+  virtual int startRtmpStreamWithoutTranscoding(const char* url) = 0;
+
+  
+  virtual int startRtmpStreamWithTranscoding(const char* url, const LiveTranscoding& transcoding) = 0;
+
+  
+  virtual int updateRtmpTranscoding(const LiveTranscoding& transcoding) = 0;
+  
+  virtual int stopRtmpStream(const char* url) = 0;
+
+
+  virtual int startLocalVideoTranscoder(const LocalTranscoderConfiguration& config) = 0;
+  virtual int updateLocalTranscoderConfiguration(const LocalTranscoderConfiguration& config) = 0;
+  virtual int stopLocalVideoTranscoder() = 0;
+  
+  virtual int startCameraCapture(VIDEO_SOURCE_TYPE type, const CameraCapturerConfiguration& config) = 0;
+
+  
+  virtual int stopCameraCapture(VIDEO_SOURCE_TYPE type) = 0;
+  
+  virtual int setCameraDeviceOrientation(VIDEO_SOURCE_TYPE type, VIDEO_ORIENTATION orientation) = 0;
+  
+  virtual int setScreenCaptureOrientation(VIDEO_SOURCE_TYPE type, VIDEO_ORIENTATION orientation) = 0;
+
+  
+  virtual int startScreenCapture(VIDEO_SOURCE_TYPE type, const ScreenCaptureConfiguration& config) = 0;
+
+  
+  virtual int stopScreenCapture(VIDEO_SOURCE_TYPE type) = 0;
+
+  
+  virtual CONNECTION_STATE_TYPE getConnectionState() = 0;
+
+  
+  virtual bool registerEventHandler(IRtcEngineEventHandler* eventHandler) = 0;
+  virtual bool unregisterEventHandler(IRtcEngineEventHandler* eventHandler) = 0;
+  virtual int setRemoteUserPriority(uid_t uid, PRIORITY_TYPE userPriority) = 0;
+
+  
+  virtual int registerPacketObserver(IPacketObserver* observer) = 0;
+
+  
+  virtual int setEncryptionMode(const char* encryptionMode) __deprecated = 0;
+
+  
+  virtual int setEncryptionSecret(const char* secret) __deprecated = 0;
+
+  
+  virtual int enableEncryption(bool enabled, const EncryptionConfig& config) = 0;
+
+  
+  virtual int createDataStream(int* streamId, bool reliable, bool ordered) = 0;
+
+  
+  virtual int createDataStream(int* streamId, DataStreamConfig& config) = 0;
+
+  
+  virtual int sendStreamMessage(int streamId, const char* data, size_t length) = 0;
+
+  
+  virtual int addVideoWatermark(const RtcImage& watermark) = 0;
+
+  
+  virtual int addVideoWatermark(const char* watermarkUrl, const WatermarkOptions& options) = 0;
+
+  
+  virtual int clearVideoWatermarks() = 0;
+
+  
+
+  
+   virtual int pauseAudio() __deprecated = 0;
+   
+   virtual int resumeAudio() __deprecated = 0;
+
+  
+  virtual int enableWebSdkInteroperability(bool enabled) __deprecated = 0;
+
+  
+  virtual int sendCustomReportMessage(
+      const char* id, const char* category, const char* event, const char* label, int value) = 0;
+
+  
+  virtual int registerMediaMetadataObserver(IMetadataObserver *observer, IMetadataObserver::METADATA_TYPE type) = 0;
+
+  
+  virtual int unregisterMediaMetadataObserver(IMetadataObserver* observer, IMetadataObserver::METADATA_TYPE type) = 0;
+
+  
+
+  virtual int startAudioFrameDump(const char* channel_id, uid_t user_id, const char* location,
+      const char* uuid, const char* passwd, long duration_ms, bool auto_upload) = 0;
+  
+  virtual int stopAudioFrameDump(const char* channel_id, uid_t user_id, const char* location) = 0;
+
+ 
+  virtual int setAINSMode(bool enabled,  AUDIO_AINS_MODE mode) = 0;
+
+  
+  virtual int registerLocalUserAccount(const char* appId, const char* userAccount) = 0;
+
+  
+  virtual int joinChannelWithUserAccount(const char* token, const char* channelId,
+                                         const char* userAccount) = 0;
+
+  
+  virtual int joinChannelWithUserAccount(const char* token, const char* channelId,
+                                          const char* userAccount, const ChannelMediaOptions& options) = 0;
+
+  
+  virtual int joinChannelWithUserAccountEx(const char* token, const char* channelId,
+                                           const char* userAccount, const ChannelMediaOptions& options,
+                                           IRtcEngineEventHandler* eventHandler) = 0;
+
+  
+  virtual int getUserInfoByUserAccount(const char* userAccount, rtc::UserInfo* userInfo) = 0;
+
+  
+  virtual int getUserInfoByUid(uid_t uid, rtc::UserInfo* userInfo) = 0;
+    
+  virtual int startOrUpdateChannelMediaRelay(const ChannelMediaRelayConfiguration &configuration) = 0;
+
+    
+  virtual int startChannelMediaRelay(const ChannelMediaRelayConfiguration &configuration) = 0;
+
+    
+  virtual int updateChannelMediaRelay(const ChannelMediaRelayConfiguration &configuration) = 0;
+
+    
+  virtual int stopChannelMediaRelay() = 0;
+
+
+  
+  virtual int pauseAllChannelMediaRelay() = 0;
+
+  
+  virtual int resumeAllChannelMediaRelay() = 0;
+
+  
+  virtual int setDirectCdnStreamingAudioConfiguration(AUDIO_PROFILE_TYPE profile) = 0;
+
+  
+  virtual int setDirectCdnStreamingVideoConfiguration(const VideoEncoderConfiguration& config) = 0;
+
+  
+  virtual int startDirectCdnStreaming(IDirectCdnStreamingEventHandler* eventHandler,
+                                      const char* publishUrl, const DirectCdnStreamingMediaOptions& options) = 0;
+
+  
+  virtual int stopDirectCdnStreaming() = 0;
+
+  
+  virtual int updateDirectCdnStreamingMediaOptions(const DirectCdnStreamingMediaOptions& options) = 0;
+
+  
+  virtual int startRhythmPlayer(const char* sound1, const char* sound2, const AgoraRhythmPlayerConfig& config) = 0;
+
+  
+  virtual int stopRhythmPlayer() = 0;
+
+  
+  virtual int configRhythmPlayer(const AgoraRhythmPlayerConfig& config) = 0;
+  
+  virtual int takeSnapshot(uid_t uid, const char* filePath)  = 0;
+    
+  virtual int enableContentInspect(bool enabled, const media::ContentInspectConfig &config) = 0;
+  
+  virtual int adjustCustomAudioPublishVolume(track_id_t trackId, int volume) = 0;
+
+  
+  virtual int adjustCustomAudioPlayoutVolume(track_id_t trackId, int volume) = 0;
+
+  
+  virtual int setCloudProxy(CLOUD_PROXY_TYPE proxyType) = 0;
+  
+  virtual int setLocalAccessPoint(const LocalAccessPointConfiguration& config) = 0;
+
+  
+  virtual int setAdvancedAudioOptions(AdvancedAudioOptions &options, int sourceType = 0) = 0;
+
+  
+  virtual int setAVSyncSource(const char* channelId, uid_t uid) = 0;
+
+  
+  virtual int enableVideoImageSource(bool enable, const ImageTrackOptions& options) = 0;
+
+  
+  virtual int64_t getCurrentMonotonicTimeInMs() = 0;
+
+  
+  virtual int enableWirelessAccelerate(bool enabled) = 0;
+  
+
+  virtual int getNetworkType() = 0;
+
+  
+  virtual int setParameters(const char* parameters) = 0;
+
+  
+  virtual int startMediaRenderingTracing() = 0;
+
+  
+  virtual int enableInstantMediaRendering() = 0;
+};
+
+class AAudioDeviceManager : public agora::util::AutoPtr<IAudioDeviceManager> {
+ public:
+  AAudioDeviceManager(IRtcEngine* engine) {
+    queryInterface(engine, AGORA_IID_AUDIO_DEVICE_MANAGER);
+  }
+};
+
+class AVideoDeviceManager : public agora::util::AutoPtr<IVideoDeviceManager> {
+ public:
+  AVideoDeviceManager(IRtcEngine* engine) {
+    queryInterface(engine, AGORA_IID_VIDEO_DEVICE_MANAGER);
+  }
+};
+
+
+enum QUALITY_REPORT_FORMAT_TYPE {
+  
+  QUALITY_REPORT_JSON = 0,
+  
+  QUALITY_REPORT_HTML = 1,
+};
+
+
+enum MEDIA_DEVICE_STATE_TYPE {
+  
+  MEDIA_DEVICE_STATE_IDLE = 0,
+  
+  MEDIA_DEVICE_STATE_ACTIVE = 1,
+  
+  MEDIA_DEVICE_STATE_DISABLED = 2,
+  
+  MEDIA_DEVICE_STATE_NOT_PRESENT = 4,
+  
+  MEDIA_DEVICE_STATE_UNPLUGGED = 8
+};
+
+enum VIDEO_PROFILE_TYPE {
+        
+  VIDEO_PROFILE_LANDSCAPE_120P = 0,  
+  
+  VIDEO_PROFILE_LANDSCAPE_120P_3 = 2,   
+                                        
+  VIDEO_PROFILE_LANDSCAPE_180P = 10,    
+                                        
+  VIDEO_PROFILE_LANDSCAPE_180P_3 = 12,  
+                                        
+  VIDEO_PROFILE_LANDSCAPE_180P_4 = 13,  
+                                        
+  VIDEO_PROFILE_LANDSCAPE_240P = 20,    
+  
+  VIDEO_PROFILE_LANDSCAPE_240P_3 = 22,  
+  
+  VIDEO_PROFILE_LANDSCAPE_240P_4 = 23,  
+  
+  VIDEO_PROFILE_LANDSCAPE_360P = 30,  
+  
+  VIDEO_PROFILE_LANDSCAPE_360P_3 = 32,  
+  
+  VIDEO_PROFILE_LANDSCAPE_360P_4 = 33,  
+  
+  VIDEO_PROFILE_LANDSCAPE_360P_6 = 35,  
+  
+  VIDEO_PROFILE_LANDSCAPE_360P_7 = 36,  
+  
+  VIDEO_PROFILE_LANDSCAPE_360P_8 = 37,  
+  
+  VIDEO_PROFILE_LANDSCAPE_360P_9 = 38,   
+                                         
+  VIDEO_PROFILE_LANDSCAPE_360P_10 = 39,  
+  
+  VIDEO_PROFILE_LANDSCAPE_360P_11 = 100,  
+  
+  VIDEO_PROFILE_LANDSCAPE_480P = 40,  
+  
+  VIDEO_PROFILE_LANDSCAPE_480P_3 = 42,  
+  
+  VIDEO_PROFILE_LANDSCAPE_480P_4 = 43,  
+                                        
+  VIDEO_PROFILE_LANDSCAPE_480P_6 = 45,  
+  
+  VIDEO_PROFILE_LANDSCAPE_480P_8 = 47,  
+                                        
+  VIDEO_PROFILE_LANDSCAPE_480P_9 = 48,  
+  
+  VIDEO_PROFILE_LANDSCAPE_480P_10 = 49,  
+  
+  VIDEO_PROFILE_LANDSCAPE_720P = 50,  
+  
+  VIDEO_PROFILE_LANDSCAPE_720P_3 = 52,  
+  
+  VIDEO_PROFILE_LANDSCAPE_720P_5 = 54,  
+  
+  VIDEO_PROFILE_LANDSCAPE_720P_6 = 55,  
+  
+  VIDEO_PROFILE_LANDSCAPE_1080P = 60,  
+  
+  VIDEO_PROFILE_LANDSCAPE_1080P_3 = 62,  
+  
+  VIDEO_PROFILE_LANDSCAPE_1080P_5 = 64,  
+  
+  VIDEO_PROFILE_LANDSCAPE_1440P = 66,  
+  
+  VIDEO_PROFILE_LANDSCAPE_1440P_2 = 67,  
+  
+  VIDEO_PROFILE_LANDSCAPE_4K = 70,  
+  
+  VIDEO_PROFILE_LANDSCAPE_4K_3 = 72,     
+                                         
+  VIDEO_PROFILE_PORTRAIT_120P = 1000,    
+                                         
+  VIDEO_PROFILE_PORTRAIT_120P_3 = 1002,  
+                                         
+  VIDEO_PROFILE_PORTRAIT_180P = 1010,    
+  
+  VIDEO_PROFILE_PORTRAIT_180P_3 = 1012,  
+  
+  VIDEO_PROFILE_PORTRAIT_180P_4 = 1013,  
+  
+  VIDEO_PROFILE_PORTRAIT_240P = 1020,  
+  
+  VIDEO_PROFILE_PORTRAIT_240P_3 = 1022,  
+  
+  VIDEO_PROFILE_PORTRAIT_240P_4 = 1023,  
+  
+  VIDEO_PROFILE_PORTRAIT_360P = 1030,  
+  
+  VIDEO_PROFILE_PORTRAIT_360P_3 = 1032,  
+  
+  VIDEO_PROFILE_PORTRAIT_360P_4 = 1033,  
+                                         
+  VIDEO_PROFILE_PORTRAIT_360P_6 = 1035,  
+  
+  VIDEO_PROFILE_PORTRAIT_360P_7 = 1036,  
+  
+  VIDEO_PROFILE_PORTRAIT_360P_8 = 1037,  
+                                         
+  VIDEO_PROFILE_PORTRAIT_360P_9 = 1038,  
+  
+  VIDEO_PROFILE_PORTRAIT_360P_10 = 1039,  
+  
+  VIDEO_PROFILE_PORTRAIT_360P_11 = 1100,  
+  
+  VIDEO_PROFILE_PORTRAIT_480P = 1040,  
+  
+  VIDEO_PROFILE_PORTRAIT_480P_3 = 1042,  
+  
+  VIDEO_PROFILE_PORTRAIT_480P_4 = 1043,  
+                                         
+  VIDEO_PROFILE_PORTRAIT_480P_6 = 1045,  
+                                         
+  VIDEO_PROFILE_PORTRAIT_480P_8 = 1047,  
+  
+  VIDEO_PROFILE_PORTRAIT_480P_9 = 1048,  
+  
+  VIDEO_PROFILE_PORTRAIT_480P_10 = 1049,  
+  
+  VIDEO_PROFILE_PORTRAIT_720P = 1050,  
+  
+  VIDEO_PROFILE_PORTRAIT_720P_3 = 1052,  
+  
+  VIDEO_PROFILE_PORTRAIT_720P_5 = 1054,  
+                                         
+  VIDEO_PROFILE_PORTRAIT_720P_6 = 1055,  
+  
+  VIDEO_PROFILE_PORTRAIT_1080P = 1060,    
+                                          
+  VIDEO_PROFILE_PORTRAIT_1080P_3 = 1062,  
+                                          
+  VIDEO_PROFILE_PORTRAIT_1080P_5 = 1064,  
+  
+  VIDEO_PROFILE_PORTRAIT_1440P = 1066,  
+  
+  VIDEO_PROFILE_PORTRAIT_1440P_2 = 1067,  
+                                          
+  VIDEO_PROFILE_PORTRAIT_4K = 1070,       
+  
+  VIDEO_PROFILE_PORTRAIT_4K_3 = 1072,  
+  
+  VIDEO_PROFILE_DEFAULT = VIDEO_PROFILE_LANDSCAPE_360P,
+};
+
+}  
+}  
+
+
+#define getAgoraRtcEngineVersion getAgoraSdkVersion
+
+
+
+
+
+
+AGORA_API agora::rtc::IRtcEngine* AGORA_CALL createAgoraRtcEngine();
+
+
+
+
+
+
+#define getAgoraRtcEngineErrorDescription getAgoraSdkErrorDescription
+#define setAgoraRtcEngineExternalSymbolLoader setAgoraSdkExternalSymbolLoader
