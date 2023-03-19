@@ -2,10 +2,27 @@ from typing import List, Tuple
 import re
 
 class CPPCodeExtractor:
-    def __extractClassBlock(fileInLines: List[str]) -> str:
+    def __extractClassBlock(fileInLines: List[str]) -> List[str]:
+        out = []
+        classStartPattern = r"class\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
+        
+        matches = re.finditer(classStartPattern, fileInLines, re.MULTILINE)
+
+        for match in matches:
+            start_line = content[:match.start()].count("\n") + 1
+            end_line = content[:match.end()].count("\n") + 1
+            print(f"Class declaration found from line {start_line} to line {end_line}:")
+            print(match.group(0))
+            print("")
     
+        for line in fileInLines:
+            match = re.search(classStartPattern, line)
+            if match:
+                print(f"Class declaration found at line {i+1}:")
+                print(line)
+                print("")
             
-        return ""
+        return []
     
     def __extractStructBlock(fileInLines: List[str]) -> str:
         return ""
