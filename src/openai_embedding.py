@@ -1,3 +1,4 @@
+from typing import List
 import openai
 from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_if_not_exception_type
 import tiktoken
@@ -5,6 +6,8 @@ from itertools import islice
 import numpy as np
 from openai.embeddings_utils import cosine_similarity
 import pandas as pd
+
+from src.cpp_code_extractor import CPPCodeBlock
 
 
 EMBEDDING_MODEL = 'text-embedding-ada-002'
@@ -71,13 +74,13 @@ class OpenAIEmbedding:
         # df['similarities'] = df.code_embedding.apply(lambda x: cosine_similarity(x, embedding))
         
         
-        code_completion = openai.Completion.create(
-            engine="text-davinci-002",
-            prompt=f"Find {code_query} following embedding: {self.len_safe_get_embedding(sourceCodes)[0:50]}",
-            max_tokens=3000,
-            stream=True
-        )
-        print(code_completion)
+        # code_completion = openai.Completion.create(
+        #     engine="text-davinci-002",
+        #     prompt=f"Find {code_query} following embedding: {self.len_safe_get_embedding(sourceCodes)[0:50]}",
+        #     max_tokens=3000,
+        #     stream=True
+        # )
+        # print(code_completion)
         
         # generated_code = code_completion.choices[0].text
 
@@ -123,3 +126,35 @@ class OpenAIEmbedding:
         # print(generated_text)
 
         # return res
+        
+    def searchCodeBlocks(self, sourceCodes: List[CPPCodeBlock], code_query, n=3, pprint=True, n_lines=1000):
+        # embedding = self.len_safe_get_embedding(code_query)
+        # encoding = tiktoken.get_encoding(EMBEDDING_ENCODING)
+        # num_tokens = len(encoding.encode(sourceCodes))
+        # print(f'num_tokens: {num_tokens}')
+        
+        codes: dict[str] = []
+        for block in sourceCodes:
+            codes.append({"code": block.codeBlocks})
+        
+        
+        df = pd.DataFrame(codes)
+        df['code_embedding'] = df['code'].apply(lambda x: self.len_safe_get_embedding(x))
+        # df['filepath'] = df['filepath'].apply(lambda x: x.replace(code_root, ""))
+        df.to_csv("code_search_openai-python.csv", index=False)
+        df.head()
+        
+        embedding = self.len_safe_get_embedding(code_query)
+        df['similarities'] = df.code_embedding.apply(lambda x: cosine_similarity(x, embedding))
+        res = df.sort_values('similarities', ascending=False).head(n)
+        if pprint:
+            for r in res.iterrows():
+                embedding = self.len_safe_get_embedding(code_query)
+                encoding = tiktoken.get_encoding(EMBEDDING_ENCODING)
+                num_tokens = len(encoding.encode(r[1].code))
+                print(f'num_tokens: {num_tokens}')
+                
+                print( "  score=" + str(round(r[1].similarities, 3)))
+                print("\n".join(r[1].code.split("\n")[:n_lines]))
+                print('-'*70)
+                break

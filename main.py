@@ -29,14 +29,16 @@ def main():
         
             # with fileSystem.open(exportFiles[0], 'r') as file:
         fileInStr = fileSystem.readtext(backupFilePath)
-        newFileContent=cppExtractor.extractCodes(fileInStr)
+        codeBlocks=cppExtractor.extractCodeBlocks(fileInStr)
 
-        backupFile = fileSystem.open(backupFilePath, mode="w")
-        backupFile.write(newFileContent)
-        backupFile.flush()
-        backupFile.close()
+        # backupFile = fileSystem.open(backupFilePath, mode="w")
+        # backupFile.write(newFileContent)
+        # backupFile.flush()
+        # backupFile.close()
         
-        openAIEmbedding.searchCodes(newFileContent, "IRtcEngine")
+        # openAIEmbedding.searchCodes(newFileContent, "IRtcEngine")
+        
+        # openAIEmbedding.searchCodeBlocks(codeBlocks, "class IRtcEngine ")
         
         # average_embedding_vector = openAIEmbedding.len_safe_get_embedding(newFileContent, average=True)
         # print(average_embedding_vector)
@@ -53,4 +55,5 @@ def main():
     
     return 0
 
-main()
+if __name__ == '__main__':
+    main()
