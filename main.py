@@ -30,6 +30,7 @@ def main():
             # with fileSystem.open(exportFiles[0], 'r') as file:
         fileInStr = fileSystem.readtext(backupFilePath)
         codeBlocks=cppExtractor.extractCodeBlocks(fileInStr)
+        openAIEmbedding.embeddingCodeBlocks(codeBlocks)
 
         # backupFile = fileSystem.open(backupFilePath, mode="w")
         # backupFile.write(newFileContent)
@@ -50,6 +51,8 @@ def main():
         # copy_file(fileSystem, backupFilePath, fileSystem, path)
 
         # fileSystem.remove(backupFilePath)
+        
+    openAIEmbedding.searchCodes("class IRtcEngine")
     
 
     
