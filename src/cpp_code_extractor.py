@@ -55,6 +55,7 @@ class CPPCodeExtractor:
         struct_pattern = r"struct\s+\w+\s*\{[^{}]*\};"
 
         vagueCodeBlockPattern = r"^(class|enum|struct)\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
+        classCodeBlockPattern = r"^class\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
 
         vagueBlocks: List[CPPCodeBlock] = []
 
@@ -63,6 +64,8 @@ class CPPCodeExtractor:
         cleaned_str = re.sub(comment_pattern, "", fileInStr)
 
         input_str = cleaned_str.split("\n")
+        
+        f = open("log.txt", "w")
 
         for index, line in enumerate(input_str):
             match = re.search(vagueCodeBlockPattern, line)
@@ -78,7 +81,48 @@ class CPPCodeExtractor:
 
                 cb.codeBlocks = "\n".join(input_str[cb.start:cb.end])
                 vagueBlocks.append(cb)
+                
+                if classMatch:=re.search(classCodeBlockPattern, line):
+                    cbs=cb.codeBlocks.split("\n")
+                    functionBlocks = []
+                    i = 0
+                    while(i < len(cbs)):
+                        if cbs[i].startswith("#"):
+                            macroSuround = []
+                            macroSuround.append(cbs[i])
 
+                            macroStack=[]
+                            macroStack.append(cbs[i])
+                            j = i + 1
+                            while(j < len(cbs)):
+                                macroSuround.append(cbs[j])
+                                if cbs[j] == "#endif":
+                                    macroStack.pop()
+                                elif cbs[j].startswith("#"):
+                                    macroStack.append(cbs[j])
+                                    
+                                if len(macroStack) == 0:
+                                    break
+                                
+                                j += 1
+                                
+                            i = j + 1
+                            functionBlocks.append("\n".join(macroSuround))
+
+                            f.write("\n".join(macroSuround))
+                            f.write("\n---------\n\n")
+                            continue
+
+                        else:
+                            if cbs[i].strip() != "":
+                                f.write(cbs[i])
+                                f.write("\n---------\n\n")
+                                
+                                functionBlocks.append(cbs[i])
+                            
+                            i += 1
+
+        f.close()
         # for block in vagueBlocks:
         #     codeBlocks = block.codeBlocks.split("\n")
         #     for i, v in enumerate(codeBlocks):
@@ -136,64 +180,6 @@ class CPPCodeExtractor:
         # f.write("---------\n\n")
         # f.write("\nStruct blocks:\n")
         # f.write("\n".join(struct_blocks))
-
-        for cb in vagueBlocks:
-            prompt = "There're some unexpected line from my c++ code, plese help remove it\n"
-            prompt += "- The c++ code should be begin with keywords like: class, struct, enum, and should be end with \"};\"\n"
-            prompt += "- You should not generate other codes, just remove the unexpected line from the code\n"
-            prompt += "- Do not introduce any other new codes base on my codes\n"
-            prompt += "- If you can't remove it, just reply \"I don't know how to do\"\n"
-            prompt += "- Here a example, there an invalid \"};\" at the begining of the code:\n"
-            prompt += ""
-            prompt += """
-};
-
-
-enum AUDIO_MIXING_STATE_TYPE {
- 
-  AUDIO_MIXING_STATE_PLAYING = 710,
-  
-  AUDIO_MIXING_STATE_PAUSED = 711,
-  
-  AUDIO_MIXING_STATE_STOPPED = 713,
-  
-  AUDIO_MIXING_STATE_FAILED = 714,
-};
-
-            
-"""
-            prompt += """
-The output should be:
-enum AUDIO_MIXING_STATE_TYPE {
- 
-  AUDIO_MIXING_STATE_PLAYING = 710,
-  
-  AUDIO_MIXING_STATE_PAUSED = 711,
-  
-  AUDIO_MIXING_STATE_STOPPED = 713,
-  
-  AUDIO_MIXING_STATE_FAILED = 714,
-};
-"""
-            prompt += "Ok, now you should help me fix the code below:\n"
-            prompt += cb.codeBlocks
-
-            # code_completion = openai.Completion.create(
-            #     engine="text-davinci-002",
-            #     prompt=prompt,
-            #     max_tokens=1000
-            # )
-            # # print(code_completion.choices[0].text)
-            # # cb.codeBlocks=code_completion['choices'][0]['text']
-            # print(code_completion['choices'][0]['text'])
-
-            # f.write("---------\n")
-            # f.write(cb.codeBlocks)
-            # f.write("\n")
-
-        # f.write("---------\n\n")
-
-        # f.close()
 
         return vagueBlocks
 
