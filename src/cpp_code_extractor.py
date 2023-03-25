@@ -56,6 +56,8 @@ class CPPCodeExtractor:
 
         vagueCodeBlockPattern = r"^(class|enum|struct)\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
         classCodeBlockPattern = r"^class\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
+        
+        function_pattern = r"[^\S\n\t]+[a-z]+\s[a-zA-Z\<\>\s\*]+\s[a-zA-Z0-9_]+\([^()]*\)\s=\s0\;$"
 
         vagueBlocks: List[CPPCodeBlock] = []
 
@@ -65,7 +67,7 @@ class CPPCodeExtractor:
 
         input_str = cleaned_str.split("\n")
         
-        f = open("log.txt", "w")
+        # f = open("log.txt", "w")
 
         for index, line in enumerate(input_str):
             match = re.search(vagueCodeBlockPattern, line)
@@ -82,60 +84,180 @@ class CPPCodeExtractor:
                 cb.codeBlocks = "\n".join(input_str[cb.start:cb.end])
                 vagueBlocks.append(cb)
                 
-                if classMatch:=re.search(classCodeBlockPattern, line):
-                    cbs=cb.codeBlocks.split("\n")
-                    functionBlocks = []
-                    i = 0
-                    while(i < len(cbs)):
-                        if cbs[i].startswith("#"):
-                            macroSuround = []
-                            macroSuround.append(cbs[i])
-
-                            macroStack=[]
-                            macroStack.append(cbs[i])
-                            j = i + 1
-                            while(j < len(cbs)):
-                                macroSuround.append(cbs[j])
-                                if cbs[j] == "#endif":
-                                    macroStack.pop()
-                                elif cbs[j].startswith("#"):
-                                    macroStack.append(cbs[j])
+                
+                
+                # if classMatch:=re.search(classCodeBlockPattern, line):
+                #     cbs=cb.codeBlocks.split("\n")
+                #     functionBlocks = []
+                #     i = 0
+                #     while(i < len(cbs)):
+                #         m = i
+                #         while (m < len(cbs)):
+                #             if cbs[m].startswith("#if"):
+                #                 break
+                #             m += 1
+                            
+                #         # Handle the macro block
+                #         if m > i and m < len(cbs):
+                #             nonMacroStr = cbs[i:m]
+                #             nonMacroBlocks = []
+                #             j = i
+                #             while (j < len(nonMacroStr)):
+                #                 strToMatch = "\n".join(nonMacroStr[j:])
+                                
+                #                 if fm:=re.search(function_pattern, strToMatch, re.MULTILINE):
+                #                     matchedStr = strToMatch[fm.start():fm.end()]
+                #                     lineCount = matchedStr.count("\n") + 1
+                #                     offsetLineCount = strToMatch[0:fm.end()].count("\n") + 1
                                     
-                                if len(macroStack) == 0:
-                                    break
-                                
-                                j += 1
-                                
-                            i = j + 1
-                            functionBlocks.append("\n".join(macroSuround))
+                #                     f.write(matchedStr)
+                #                     f.write("\n---------\n\n")
+                                    
+                #                     functionBlocks.append(matchedStr)
 
-                            f.write("\n".join(macroSuround))
-                            f.write("\n---------\n\n")
-                            continue
+                #                     j = j + offsetLineCount + 1
+                #                     continue
+                                
+                #                 j += 1
+                #             i = m
+                            
+                        
+                #         if cbs[i].startswith("#"):
+                #             macroSuround = []
+                #             macroSuround.append(cbs[i])
 
-                        else:
-                            if cbs[i].strip() != "":
-                                f.write(cbs[i])
+                #             macroStack=[]
+                #             macroStack.append(cbs[i])
+                #             j = i + 1
+                #             while(j < len(cbs)):
+                #                 macroSuround.append(cbs[j])
+                #                 if cbs[j].strip() == "#endif":
+                #                     macroStack.pop()
+                #                 elif cbs[j].startswith("#"):
+                #                     macroStack.append(cbs[j])
+                                    
+                #                 if len(macroStack) == 0:
+                #                     break
+                                
+                #                 j += 1
+                                
+                #             i = j + 1
+                #             functionBlocks.append("\n".join(macroSuround))
+
+                #             f.write("\n".join(macroSuround))
+                #             f.write("\n---------\n\n")
+                #             continue
+
+                #         else:
+                #             j = i
+                #             while (j < len(cbs)):
+                #                 strToMatch = "\n".join(cbs[j:])
+                                
+                #                 if fm:=re.search(function_pattern, strToMatch, re.MULTILINE):
+                #                     matchedStr = strToMatch[fm.start():fm.end()]
+                #                     lineCount = matchedStr.count("\n") + 1
+                #                     offsetLineCount = strToMatch[0:fm.end()].count("\n") + 1
+                                    
+                #                     f.write(matchedStr)
+                #                     f.write("\n---------\n\n")
+                                    
+                #                     functionBlocks.append(matchedStr)
+
+                #                     j = j + offsetLineCount + 1
+                #                     continue
+                                
+                #                 j += 1
+                                
+                #             i = j + 1
+
+        
+        
+        f = open("log.txt", "w")
+        for block in vagueBlocks:
+            if classMatch:=re.search(classCodeBlockPattern, block.codeBlocks):
+                codeSnippets: List[str] = []
+                cbs=block.codeBlocks.split("\n")
+
+                i = 0
+                
+                while(i < len(cbs)):
+                    if cbs[i].startswith("#if"):
+                        macroSuround = []
+                        macroSuround.append(cbs[i])
+
+                        macroStack=[]
+                        macroStack.append(cbs[i])
+                        j = i + 1
+                        while(j < len(cbs)):
+                            macroSuround.append(cbs[j])
+                            if cbs[j].strip() == "#endif":
+                                macroStack.pop()
+                            elif cbs[j].startswith("#"):
+                                macroStack.append(cbs[j])
+                                
+                            if len(macroStack) == 0:
+                                break
+                            
+                            j += 1
+                            
+                        i = j + 1
+                        codeSnippets.append("\n".join(macroSuround))
+                        continue
+                    
+                    m = i
+                    while (m < len(cbs)):
+                        if cbs[m].startswith("#if"):
+                            break
+                        m += 1
+                            
+                    # Finded a macro block
+                    if m > i and m < len(cbs):
+                        codeSnippets.append("\n".join(cbs[i:m - 1]))
+                        i = m
+                    else:
+                        codeSnippets.append("\n".join(cbs[i:m]))
+                        i = m + 1
+                    
+                
+                for cs in codeSnippets:
+                    if "#if" not in cs:
+                        functionBlocks: List[str] = []
+                        csl = cs.split("\n")
+                        j = 0
+                        while (j < len(csl)):
+                            strToMatch = "\n".join(csl[j:])
+                            
+                            if fm:=re.search(function_pattern, strToMatch, re.MULTILINE):
+                                matchedStr = strToMatch[fm.start():fm.end()]
+                                lineCount = matchedStr.count("\n") + 1
+                                offsetLineCount = strToMatch[0:fm.end()].count("\n") + 1
+                                
+                                f.write(matchedStr)
                                 f.write("\n---------\n\n")
                                 
-                                functionBlocks.append(cbs[i])
+                                functionBlocks.append(matchedStr)
+
+                                j = j + offsetLineCount + 1
+                                continue
                             
-                            i += 1
+                            j += 1
+                            
+                        for fb in functionBlocks:
+                            f.write(fb)
+                            f.write("\n-----\n\n")
+                    else:
+                        f.write(cs)
+                        f.write("\n-----\n\n")
 
+
+
+
+
+                
         f.close()
-        # for block in vagueBlocks:
-        #     codeBlocks = block.codeBlocks.split("\n")
-        #     for i, v in enumerate(codeBlocks):
-        #         if v != "}" or v != "};":
-        #             block.start = block.start + i
-        #             break
-
-        #     for i, v in enumerate(reversed(codeBlocks)):
-        #         if v == "#if" or v == "};":
-        #             block.end = block.end - i + 3
-        #             break
-
-        #     block.codeBlocks = "\n".join(input_str[block.start:block.end])
+                    
+                    
+                    
 
         # matches = re.finditer(vagueCodeBlockPattern, cleaned_str)
         # for match in matches:
