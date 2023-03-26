@@ -220,7 +220,7 @@ class CPPCodeExtractor:
  
         f.close()
 
-        return vagueBlocks
+        return finalCodeSnippets
 
     def extractCodes(self, fileInStr: str) -> str:
         comment_pattern = r"\/\/.*|\/\*(?:.|[\n])*?\*\/"

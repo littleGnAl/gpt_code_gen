@@ -1,0 +1,6 @@
+class {{ CLASS_NAME }}Wrapper {
+public:
+  {{ FUNCTIONS }}
+protected:
+    {{ CLASS_NAME }} *{{ CLASS_NAME_LOWERCASE }}_;
+};
