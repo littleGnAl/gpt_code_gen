@@ -11,6 +11,8 @@ class OpenAICodeGen:
 
     def __init__(self, fileSystem: FS) -> None:
         self.__fileSystem = fileSystem
+        
+
 
     def generate(self,
                  codeSnippets: List[CodeSnippet],

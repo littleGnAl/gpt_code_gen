@@ -34,6 +34,12 @@ class ChunkCodeSnippet(CodeSnippet):
 #         self.codeBlocks = ""
 
 
+def findAllParameterTypesFromCodeSnippet(self, codeSnippet: str) -> List[str]:
+    parameterListPattern = r"\([^()]*\)"
+    parameterTypesPattern = r"(?:const )?([a-zA-Z0-9_\*\&]+ )"
+    return []
+
+
 class CPPCodeExtractor:
     def __extractClassBlock(fileInLines: List[str]) -> List[str]:
         out = []
