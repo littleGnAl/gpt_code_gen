@@ -1,18 +1,37 @@
-from typing import List, Tuple
+
+from typing import List, Tuple, Optional
 import re
+from enum import Enum
+from pydantic import BaseModel
+from pydantic.dataclasses import dataclass
 
 import openai
 
+class CodeSnippetType(str, Enum):
+    class_t = "class"
+    struct_t = "struct"
+    enum_t = "enum"
+    
+class CodeSnippet(BaseModel):
+    type: CodeSnippetType = None
+    name: str = None
+    source: str = ""
+    start: int = 0
+    end: int = 0
+    
+class ChunkCodeSnippet(CodeSnippet):
+    codeSnippets: List[CodeSnippet] = None
 
-class CPPCodeBlock:
-    start: int
-    end: int
-    codeBlocks: str
 
-    def __init__(self):
-        self.start = 0
-        self.end = 0
-        self.codeBlocks = ""
+# class CPPCodeBlock:
+#     start: int
+#     end: int
+#     codeBlocks: str
+
+#     def __init__(self):
+#         self.start = 0
+#         self.end = 0
+#         self.codeBlocks = ""
 
 
 class CPPCodeExtractor:
@@ -48,18 +67,22 @@ class CPPCodeExtractor:
     def __removeComments(fileInLines: List[str]) -> str:
         return ""
 
-    def extractCodeBlocks(self, fileInStr: str) -> List[CPPCodeBlock]:
+    def extractCodeBlocks(self, fileInStr: str) -> List[CodeSnippet]:
         # Define the regular expression patterns for class, enum, and struct
         class_pattern = r"class\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{[\s\S]*\};"
         enum_pattern = r"enum\s+\w+\s*\{[^{}]*\};"
         struct_pattern = r"struct\s+\w+\s*\{[^{}]*\};"
+        
+        class_name_pattern = "class ([a-zA-Z0-9_\<\>]+)"
+        struct_name_pattern = "struct ([a-zA-Z0-9_\<\>]+)"
+        enum_name_pattern = "enum ([a-zA-Z0-9_\<\>]+)"
 
-        vagueCodeBlockPattern = r"^(class|enum|struct)\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
+        vagueCodeBlockPattern = r"^(class|enum|struct)\s+(\w+)\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
         classCodeBlockPattern = r"^class\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
         
         function_pattern = r"[^\S\n\t]+[a-z]+\s[a-zA-Z\<\>\s\*]+\s[a-zA-Z0-9_]+\([^()]*\)\s=\s0\;$"
 
-        vagueBlocks: List[CPPCodeBlock] = []
+        vagueBlocks: List[CodeSnippet] = []
 
         comment_pattern = r"\/\/.*|\/\*(?:.|[\n])*?\*\/"
         # Remove all single-line and multi-line comments using the regular expression pattern
@@ -72,7 +95,10 @@ class CPPCodeExtractor:
         for index, line in enumerate(input_str):
             match = re.search(vagueCodeBlockPattern, line)
             if match:
-                cb: CPPCodeBlock = CPPCodeBlock()
+                cb: CodeSnippet = CodeSnippet()
+                cb.type = CodeSnippetType(match.group(1))
+                cb.name = match.group(2)
+                
                 # start_line = cleaned_str[:match.start()].count("\n") + 1
                 cb.start = index
                 for i, v in enumerate(input_str[index:]):
@@ -81,227 +107,118 @@ class CPPCodeExtractor:
 
                         break
 
-                cb.codeBlocks = "\n".join(input_str[cb.start:cb.end])
+                cb.source = "\n".join(input_str[cb.start:cb.end])
                 vagueBlocks.append(cb)
-                
-                
-                
-                # if classMatch:=re.search(classCodeBlockPattern, line):
-                #     cbs=cb.codeBlocks.split("\n")
-                #     functionBlocks = []
-                #     i = 0
-                #     while(i < len(cbs)):
-                #         m = i
-                #         while (m < len(cbs)):
-                #             if cbs[m].startswith("#if"):
-                #                 break
-                #             m += 1
-                            
-                #         # Handle the macro block
-                #         if m > i and m < len(cbs):
-                #             nonMacroStr = cbs[i:m]
-                #             nonMacroBlocks = []
-                #             j = i
-                #             while (j < len(nonMacroStr)):
-                #                 strToMatch = "\n".join(nonMacroStr[j:])
-                                
-                #                 if fm:=re.search(function_pattern, strToMatch, re.MULTILINE):
-                #                     matchedStr = strToMatch[fm.start():fm.end()]
-                #                     lineCount = matchedStr.count("\n") + 1
-                #                     offsetLineCount = strToMatch[0:fm.end()].count("\n") + 1
-                                    
-                #                     f.write(matchedStr)
-                #                     f.write("\n---------\n\n")
-                                    
-                #                     functionBlocks.append(matchedStr)
-
-                #                     j = j + offsetLineCount + 1
-                #                     continue
-                                
-                #                 j += 1
-                #             i = m
-                            
-                        
-                #         if cbs[i].startswith("#"):
-                #             macroSuround = []
-                #             macroSuround.append(cbs[i])
-
-                #             macroStack=[]
-                #             macroStack.append(cbs[i])
-                #             j = i + 1
-                #             while(j < len(cbs)):
-                #                 macroSuround.append(cbs[j])
-                #                 if cbs[j].strip() == "#endif":
-                #                     macroStack.pop()
-                #                 elif cbs[j].startswith("#"):
-                #                     macroStack.append(cbs[j])
-                                    
-                #                 if len(macroStack) == 0:
-                #                     break
-                                
-                #                 j += 1
-                                
-                #             i = j + 1
-                #             functionBlocks.append("\n".join(macroSuround))
-
-                #             f.write("\n".join(macroSuround))
-                #             f.write("\n---------\n\n")
-                #             continue
-
-                #         else:
-                #             j = i
-                #             while (j < len(cbs)):
-                #                 strToMatch = "\n".join(cbs[j:])
-                                
-                #                 if fm:=re.search(function_pattern, strToMatch, re.MULTILINE):
-                #                     matchedStr = strToMatch[fm.start():fm.end()]
-                #                     lineCount = matchedStr.count("\n") + 1
-                #                     offsetLineCount = strToMatch[0:fm.end()].count("\n") + 1
-                                    
-                #                     f.write(matchedStr)
-                #                     f.write("\n---------\n\n")
-                                    
-                #                     functionBlocks.append(matchedStr)
-
-                #                     j = j + offsetLineCount + 1
-                #                     continue
-                                
-                #                 j += 1
-                                
-                #             i = j + 1
-
         
-        
+        finalCodeSnippets: List[CodeSnippet] = []
         f = open("log.txt", "w")
         for block in vagueBlocks:
-            if classMatch:=re.search(classCodeBlockPattern, block.codeBlocks):
-                codeSnippets: List[str] = []
-                cbs=block.codeBlocks.split("\n")
+            if block.type != CodeSnippetType.class_t:
+                finalCodeSnippets.append(block)
+                continue
+            
+            chunkCodeSnippet = ChunkCodeSnippet()
+            finalCodeSnippets.append(chunkCodeSnippet)
+            
+            chunkCodeSnippet.type = block.type
+            chunkCodeSnippet.name = block.name
+            chunkCodeSnippet.source = block.source
+            chunkCodeSnippet.start = block.start
+            chunkCodeSnippet.end = block.end
+            chunkCodeSnippet.codeSnippets = []
+            
+            
+            codeSnippets: List[str] = []
+            cbs=chunkCodeSnippet.source.split("\n")
 
-                i = 0
-                
-                while(i < len(cbs)):
-                    if cbs[i].startswith("#if"):
-                        macroSuround = []
-                        macroSuround.append(cbs[i])
-
-                        macroStack=[]
-                        macroStack.append(cbs[i])
-                        j = i + 1
-                        while(j < len(cbs)):
-                            macroSuround.append(cbs[j])
-                            if cbs[j].strip() == "#endif":
-                                macroStack.pop()
-                            elif cbs[j].startswith("#"):
-                                macroStack.append(cbs[j])
-                                
-                            if len(macroStack) == 0:
-                                break
-                            
-                            j += 1
-                            
-                        i = j + 1
-                        codeSnippets.append("\n".join(macroSuround))
-                        continue
+            i = 0
+            
+            while(i < len(cbs)):
+                if cbs[i].startswith("#if"):
+                    # codeSnippet = CodeSnippet()
+                    # codeSnippet.start = i
                     
-                    m = i
-                    while (m < len(cbs)):
-                        if cbs[m].startswith("#if"):
+                    macroSuround = []
+                    macroSuround.append(cbs[i])
+
+                    macroStack=[]
+                    macroStack.append(cbs[i])
+                    j = i + 1
+                    while(j < len(cbs)):
+                        macroSuround.append(cbs[j])
+                        if cbs[j].strip() == "#endif":
+                            macroStack.pop()
+                        elif cbs[j].startswith("#"):
+                            macroStack.append(cbs[j])
+                            
+                        if len(macroStack) == 0:
                             break
-                        m += 1
-                            
-                    # Finded a macro block
-                    if m > i and m < len(cbs):
-                        codeSnippets.append("\n".join(cbs[i:m - 1]))
-                        i = m
-                    else:
-                        codeSnippets.append("\n".join(cbs[i:m]))
-                        i = m + 1
+                        
+                        j += 1
+                        
+                    i = j + 1
                     
+                    # codeSnippet.end = j
+                    # codeSnippet.source = "\n".join(macroSuround)
+                    
+                    # chunkCodeSnippet.codeSnippets.append(codeSnippet)
+                    
+                    codeSnippets.append("\n".join(macroSuround))
+                    continue
                 
-                for cs in codeSnippets:
-                    if "#if" not in cs:
-                        functionBlocks: List[str] = []
-                        csl = cs.split("\n")
-                        j = 0
-                        while (j < len(csl)):
-                            strToMatch = "\n".join(csl[j:])
+                m = i
+                while (m < len(cbs)):
+                    if cbs[m].startswith("#if"):
+                        break
+                    m += 1
+                        
+                # Finded a macro block
+                if m > i and m < len(cbs):
+                    codeSnippets.append("\n".join(cbs[i:m - 1]))
+                    i = m
+                else:
+                    codeSnippets.append("\n".join(cbs[i:m]))
+                    i = m + 1
+                
+            
+            for cs in codeSnippets:
+                if "#if" not in cs:
+                    functionBlocks: List[str] = []
+                    csl = cs.split("\n")
+                    j = 0
+                    while (j < len(csl)):
+                        strToMatch = "\n".join(csl[j:])
+                        
+                        if fm:=re.search(function_pattern, strToMatch, re.MULTILINE):
+                            matchedStr = strToMatch[fm.start():fm.end()]
+                            lineCount = matchedStr.count("\n") + 1
+                            offsetLineCount = strToMatch[0:fm.end()].count("\n") + 1
                             
-                            if fm:=re.search(function_pattern, strToMatch, re.MULTILINE):
-                                matchedStr = strToMatch[fm.start():fm.end()]
-                                lineCount = matchedStr.count("\n") + 1
-                                offsetLineCount = strToMatch[0:fm.end()].count("\n") + 1
-                                
-                                f.write(matchedStr)
-                                f.write("\n---------\n\n")
-                                
-                                functionBlocks.append(matchedStr)
+                            f.write(matchedStr)
+                            f.write("\n---------\n\n")
+                            
+                            functionBlocks.append(matchedStr)
 
-                                j = j + offsetLineCount + 1
-                                continue
-                            
-                            j += 1
-                            
-                        for fb in functionBlocks:
-                            f.write(fb)
-                            f.write("\n-----\n\n")
-                    else:
-                        f.write(cs)
+                            j = j + offsetLineCount + 1
+                            continue
+                        
+                        j += 1
+                        
+                    for fb in functionBlocks:
+                        codeSnippet = CodeSnippet()
+                        codeSnippet.source = fb
+                        chunkCodeSnippet.codeSnippets.append(codeSnippet)
+                    
+                        f.write(fb)
                         f.write("\n-----\n\n")
-
-
-
-
-
-                
+                else:
+                    codeSnippet = CodeSnippet()
+                    codeSnippet.source = cs
+                    chunkCodeSnippet.codeSnippets.append(codeSnippet)
+                    f.write(cs)
+                    f.write("\n-----\n\n")
+ 
         f.close()
-                    
-                    
-                    
-
-        # matches = re.finditer(vagueCodeBlockPattern, cleaned_str)
-        # for match in matches:
-        #     cb: CPPCodeBlock = CPPCodeBlock()
-        #     start_line = cleaned_str[:match.start()].count("\n") + 1
-        #     cb.start = start_line
-        #     for index, v in enumerate(input_str[start_line:]):
-        #         if v.strip() == "};":
-        #             cb.end = index
-
-        #             break
-
-        #     cb.codeBlocks = "\n".join(input_str[cb.start:cb.end + 5])
-        #     vagueBlocks.append(cb)
-
-        # Define the input file name
-        # file_name = "example.cpp"
-
-        # # Read the input file
-        # with open(file_name, "r") as f:
-        #     input_str = f.read()
-
-        # Find all matches of the regular expression patterns
-        # class_matches = re.finditer(class_pattern, input_str)
-        # enum_matches = re.finditer(enum_pattern, input_str)
-        # struct_matches = re.finditer(struct_pattern, input_str)
-
-        # # Extract the matched code blocks
-        # class_blocks = [match.group() for match in class_matches]
-        # enum_blocks = [match.group() for match in enum_matches]
-        # struct_blocks = [match.group() for match in struct_matches]
-
-        # f = open("log.txt", "w")
-        # Print the extracted code blocks
-        # print("Class blocks:")
-        # print(class_blocks)
-        # f.write(str("Class blocks:\n"))
-        # f.write("\n".join(class_blocks))
-        # f.write("---------\n\n")
-        # f.write("\nEnum blocks:\n")
-        # f.write("\n".join(enum_blocks))
-        # f.write("---------\n\n")
-        # f.write("\nStruct blocks:\n")
-        # f.write("\n".join(struct_blocks))
 
         return vagueBlocks
 

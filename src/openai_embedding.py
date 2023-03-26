@@ -8,7 +8,7 @@ from openai.embeddings_utils import cosine_similarity
 import pandas as pd
 from pandas import DataFrame
 
-from src.cpp_code_extractor import CPPCodeBlock
+from src.cpp_code_extractor import CodeSnippet
 
 
 EMBEDDING_MODEL = 'text-embedding-ada-002'
@@ -129,7 +129,7 @@ class OpenAIEmbedding:
 
         # return res
 
-    def embeddingCodeBlocks(self, codeBlocks: List[CPPCodeBlock]):
+    def embeddingCodeBlocks(self, codeBlocks: List[CodeSnippet]):
         codes: dict[str] = []
         for block in codeBlocks:
             codes.append({"code": block.codeBlocks})
