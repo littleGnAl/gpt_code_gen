@@ -34,7 +34,7 @@ def main():
         boilerplateFunctionPrompt = fileSystem.readtext(
             "/Users/littlegnal/codes/personal-project/gpt_code_gen/promptions/boilerplate_function_prompt.md")
         structFinderPrompt = fileSystem.readtext(
-            "/Users/littlegnal/codes/personal-project/gpt_code_gen/promptions/struct_finder_prompt.md")
+            "/Users/littlegnal/codes/personal-project/gpt_code_gen/promptions/parameter_types_finder_prompt.md")
         output = openAICodeGen.generate(
             codeBlocks, wrapperTemplate, boilerplateFunctionPrompt, structFinderPrompt)
         print("\n--------\n")

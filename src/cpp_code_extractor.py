@@ -7,18 +7,21 @@ from pydantic.dataclasses import dataclass
 
 import openai
 
+
 class CodeSnippetType(str, Enum):
     class_t = "class"
     struct_t = "struct"
     enum_t = "enum"
-    
+
+
 class CodeSnippet(BaseModel):
     type: CodeSnippetType = None
     name: str = None
     source: str = ""
     start: int = 0
     end: int = 0
-    
+
+
 class ChunkCodeSnippet(CodeSnippet):
     codeSnippets: List[CodeSnippet] = None
 
@@ -34,10 +37,46 @@ class ChunkCodeSnippet(CodeSnippet):
 #         self.codeBlocks = ""
 
 
-def findAllParameterTypesFromCodeSnippet(self, codeSnippet: str) -> List[str]:
+def findAllParameterTypesFromCodeSnippet(codeSnippet: str) -> List[str]:
     parameterListPattern = r"\([^()]*\)"
+    parameterListMatches = re.finditer(
+        parameterListPattern, codeSnippet, re.MULTILINE)
+    parameterList: List[str] = []
+    for m in parameterListMatches:
+        pl = codeSnippet[m.start():m.end()]
+        parameterList.append(pl)
+
+    parameterTypes: List[str] = []
     parameterTypesPattern = r"(?:const )?([a-zA-Z0-9_\*\&]+ )"
-    return []
+    for pl in parameterList:
+        # parameterWithType = pl.split(",")
+
+        parameterTypesMatches = re.finditer(
+            parameterTypesPattern, pl, re.MULTILINE)
+        for m in pl.strip("(").strip(")").split(","):
+            # The macro, e.g., (__APPLE__)
+            if m.startswith("_"):
+                continue
+            # const int* out = nullptr
+            pt = m.split("=")[0].replace("const", "").strip().split(" ")[0].replace(
+                "&", "").replace("*", "").strip()
+            parameterTypes.append(pt)
+
+    return parameterTypes
+
+def getStructCodeSnippetsOfTypeNames(typeNames: List[str], codeSnippetSources: List[CodeSnippet]) -> List[CodeSnippet]:
+    codeSnippets: List[CodeSnippet] = []
+
+    for typeName in typeNames:
+        for codeSnippet in codeSnippetSources:
+            if codeSnippet.type != CodeSnippetType.struct_t:
+                continue
+            
+            if codeSnippet.name == typeName:
+                codeSnippets.append(codeSnippet)
+                break
+
+    return codeSnippets
 
 
 class CPPCodeExtractor:
@@ -78,14 +117,14 @@ class CPPCodeExtractor:
         class_pattern = r"class\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{[\s\S]*\};"
         enum_pattern = r"enum\s+\w+\s*\{[^{}]*\};"
         struct_pattern = r"struct\s+\w+\s*\{[^{}]*\};"
-        
+
         class_name_pattern = "class ([a-zA-Z0-9_\<\>]+)"
         struct_name_pattern = "struct ([a-zA-Z0-9_\<\>]+)"
         enum_name_pattern = "enum ([a-zA-Z0-9_\<\>]+)"
 
         vagueCodeBlockPattern = r"^(class|enum|struct)\s+(\w+)\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
         classCodeBlockPattern = r"^class\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
-        
+
         function_pattern = r"[^\S\n\t]+[a-z]+\s[a-zA-Z\<\>\s\*]+\s[a-zA-Z0-9_]+\([^()]*\)\s=\s0\;$"
 
         vagueBlocks: List[CodeSnippet] = []
@@ -95,7 +134,7 @@ class CPPCodeExtractor:
         cleaned_str = re.sub(comment_pattern, "", fileInStr)
 
         input_str = cleaned_str.split("\n")
-        
+
         # f = open("log.txt", "w")
 
         for index, line in enumerate(input_str):
@@ -104,7 +143,7 @@ class CPPCodeExtractor:
                 cb: CodeSnippet = CodeSnippet()
                 cb.type = CodeSnippetType(match.group(1))
                 cb.name = match.group(2)
-                
+
                 # start_line = cleaned_str[:match.start()].count("\n") + 1
                 cb.start = index
                 for i, v in enumerate(input_str[index:]):
@@ -115,69 +154,68 @@ class CPPCodeExtractor:
 
                 cb.source = "\n".join(input_str[cb.start:cb.end])
                 vagueBlocks.append(cb)
-        
+
         finalCodeSnippets: List[CodeSnippet] = []
         f = open("log.txt", "w")
         for block in vagueBlocks:
             if block.type != CodeSnippetType.class_t:
                 finalCodeSnippets.append(block)
                 continue
-            
+
             chunkCodeSnippet = ChunkCodeSnippet()
             finalCodeSnippets.append(chunkCodeSnippet)
-            
+
             chunkCodeSnippet.type = block.type
             chunkCodeSnippet.name = block.name
             chunkCodeSnippet.source = block.source
             chunkCodeSnippet.start = block.start
             chunkCodeSnippet.end = block.end
             chunkCodeSnippet.codeSnippets = []
-            
-            
+
             codeSnippets: List[str] = []
-            cbs=chunkCodeSnippet.source.split("\n")
+            cbs = chunkCodeSnippet.source.split("\n")
 
             i = 0
-            
-            while(i < len(cbs)):
+
+            while (i < len(cbs)):
                 if cbs[i].startswith("#if"):
                     # codeSnippet = CodeSnippet()
                     # codeSnippet.start = i
-                    
+
                     macroSuround = []
                     macroSuround.append(cbs[i])
 
-                    macroStack=[]
+                    macroStack = []
                     macroStack.append(cbs[i])
                     j = i + 1
-                    while(j < len(cbs)):
+                    while (j < len(cbs)):
                         macroSuround.append(cbs[j])
                         if cbs[j].strip() == "#endif":
                             macroStack.pop()
                         elif cbs[j].startswith("#"):
                             macroStack.append(cbs[j])
-                            
+
                         if len(macroStack) == 0:
                             break
-                        
+
                         j += 1
-                        
+
                     i = j + 1
-                    
+
                     # codeSnippet.end = j
                     # codeSnippet.source = "\n".join(macroSuround)
-                    
+
                     # chunkCodeSnippet.codeSnippets.append(codeSnippet)
-                    
+
                     codeSnippets.append("\n".join(macroSuround))
                     continue
-                
+
                 m = i
                 while (m < len(cbs)):
                     if cbs[m].startswith("#if"):
                         break
                     m += 1
-                        
+
                 # Finded a macro block
                 if m > i and m < len(cbs):
                     codeSnippets.append("\n".join(cbs[i:m - 1]))
@@ -185,8 +223,7 @@ class CPPCodeExtractor:
                 else:
                     codeSnippets.append("\n".join(cbs[i:m]))
                     i = m + 1
-                
-            
+
             for cs in codeSnippets:
                 if "#if" not in cs:
                     functionBlocks: List[str] = []
@@ -194,27 +231,28 @@ class CPPCodeExtractor:
                     j = 0
                     while (j < len(csl)):
                         strToMatch = "\n".join(csl[j:])
-                        
-                        if fm:=re.search(function_pattern, strToMatch, re.MULTILINE):
+
+                        if fm := re.search(function_pattern, strToMatch, re.MULTILINE):
                             matchedStr = strToMatch[fm.start():fm.end()]
                             lineCount = matchedStr.count("\n") + 1
-                            offsetLineCount = strToMatch[0:fm.end()].count("\n") + 1
-                            
+                            offsetLineCount = strToMatch[0:fm.end()].count(
+                                "\n") + 1
+
                             f.write(matchedStr)
                             f.write("\n---------\n\n")
-                            
+
                             functionBlocks.append(matchedStr)
 
                             j = j + offsetLineCount + 1
                             continue
-                        
+
                         j += 1
-                        
+
                     for fb in functionBlocks:
                         codeSnippet = CodeSnippet()
                         codeSnippet.source = fb
                         chunkCodeSnippet.codeSnippets.append(codeSnippet)
-                    
+
                         f.write(fb)
                         f.write("\n-----\n\n")
                 else:
@@ -223,7 +261,7 @@ class CPPCodeExtractor:
                     chunkCodeSnippet.codeSnippets.append(codeSnippet)
                     f.write(cs)
                     f.write("\n-----\n\n")
- 
+
         f.close()
 
         return finalCodeSnippets

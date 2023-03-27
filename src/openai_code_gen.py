@@ -3,7 +3,13 @@ import fs.osfs
 from fs.base import FS
 import openai
 
-from src.cpp_code_extractor import ChunkCodeSnippet, CodeSnippet, CodeSnippetType
+from src.cpp_code_extractor import (
+    ChunkCodeSnippet, 
+    CodeSnippet, 
+    CodeSnippetType, 
+    findAllParameterTypesFromCodeSnippet, 
+    getStructCodeSnippetsOfTypeNames
+)
 
 
 class OpenAICodeGen:
@@ -11,8 +17,6 @@ class OpenAICodeGen:
 
     def __init__(self, fileSystem: FS) -> None:
         self.__fileSystem = fileSystem
-        
-
 
     def generate(self,
                  codeSnippets: List[CodeSnippet],
@@ -24,13 +28,13 @@ class OpenAICodeGen:
         for cs in codeSnippets:
             if isinstance(cs, ChunkCodeSnippet):
                 className = cs.name
-                
+
                 if className != "IRtcEngine":
                     continue
                 print("\n----------------\n")
                 print(f"Processing class {className}")
                 print(f"\n")
-                
+
                 newWrapperTemplate = wrapperTemplate.replace("{{ CLASS_NAME }}", className).replace(
                     "{{ CLASS_NAME_LOWERCASE }}", className.lower())
                 functions: List[str] = []
@@ -39,7 +43,7 @@ class OpenAICodeGen:
                     print(f"######\n")
                     # prompt = boilerplateFunctionPrompt
                     prompt = structFinderPrompt
-                    
+
                     messages = [
                         {
                             "role": "system",
@@ -48,23 +52,28 @@ class OpenAICodeGen:
                         {"role": "user", "content": ccs.source},
                     ]
                     # call the OpenAI chat completion API with the given messages
-                    response = openai.ChatCompletion.create(
-                        model="gpt-3.5-turbo",
-                        messages=messages,
-                        temperature=0
-                    )
+                    # response = openai.ChatCompletion.create(
+                    #     model="gpt-3.5-turbo",
+                    #     messages=messages,
+                    #     temperature=0
+                    # )
 
-                    choices = response["choices"]  # type: ignore
-                    completion = choices[0].message.content.strip()
+                    # choices = response["choices"]  # type: ignore
+                    # completion = choices[0].message.content.strip()
+
+                    # # print(code_completion.choices[0].text)
+                    # # cb.codeBlocks=code_completion['choices'][0]['text']
+                    # # response = code_completion['choices'][0]['text']
+
+                    # print(completion)
+                    # print(f"\n######\n\n")
+                    # functions.append(completion)
+
+                    parameterTypes = findAllParameterTypesFromCodeSnippet(
+                        ccs.source)
                     
-                    # print(code_completion.choices[0].text)
-                    # cb.codeBlocks=code_completion['choices'][0]['text']
-                    # response = code_completion['choices'][0]['text']
-                    
-                    print(completion)
-                    print(f"\n######\n\n")
-                    functions.append(completion)
-                
+                    structCSList = getStructCodeSnippetsOfTypeNames(parameterTypes, codeSnippets)
+
                 # output = newWrapperTemplate.replace("{{ FUNCTIONS }}", "\n".join(functions))
 
                 break
