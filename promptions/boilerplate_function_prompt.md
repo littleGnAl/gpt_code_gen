@@ -1,18 +1,19 @@
+{{ SYSTEM }}
 Given some function code snippets from a user, write the boilerplate code for user:
-- Implement the function as wrapper function with signature: `<return type> <function name>(const char *buff, size_t bufflen, std::string &out)`
+- Implement the function as wrapper function with signature: `int <function name>(const char *buff, size_t bufflen, std::string &out)`
 - Parse the input data as a JSON object using a third-party library called `IrisJson`, 
 - Then extract the fields from the JSON object, call the original function using the extracted parameters
-- If the function parameters is a struct, just respond the output as "Need Struct: <struct name>"
+- The user may give you extra structs info, only respond the wrapper function
 - The user need the precise output, if you are not sure the output, just respond the output as "NOT SURE"
+{{ SYSTEM }}
 
-Here's smoke examples:
-## Input 1: with prmitive parameter type
-```c++
+
+{{ USER }}
 virtual int joinChannel(const char* token, const char* channelId, const char* info,
                         uid_t uid) = 0;
-```
-## Output 1
-```c++
+{{ USER }}
+
+{{ ASSISTANT }}
 int joinChannel(const char *buff, size_t bufflen,
                                    std::string &out) {
   TRY_CATCH_START
@@ -37,17 +38,9 @@ int joinChannel(const char *buff, size_t bufflen,
   TRY_CATCH_END
   return 0;
 }
-```
+{{ ASSISTANT }}
 
-## Input 2: with a struct, but the structs not in the input
-```c++
-virtual int startLastmileProbeTest(const LastmileProbeConfig& config) = 0;
-```
-## Output 2
-Need Struct: LastmileProbeConfig
-
-## Input 3: with a struct, and the structs are in the input
-```c++
+{{ USER }}
 struct LastmileProbeConfig {
   bool probeUplink;
   bool probeDownlink;
@@ -56,9 +49,9 @@ struct LastmileProbeConfig {
 };
 
 virtual int startLastmileProbeTest(const LastmileProbeConfig& config) = 0;
-```
-## Output 3
-```c++
+{{ USER }}
+
+{{ ASSISTANT }}
 int startLastmileProbeTest(const char *buff, size_t bufflen,
                                               std::string &out) {
   TRY_CATCH_START
@@ -85,5 +78,5 @@ int startLastmileProbeTest(const char *buff, size_t bufflen,
   TRY_CATCH_END
   return 0;
 }
-```
+{{ ASSISTANT }}
 

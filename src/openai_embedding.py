@@ -8,7 +8,7 @@ from openai.embeddings_utils import cosine_similarity
 import pandas as pd
 from pandas import DataFrame
 
-from src.cpp_code_extractor import CodeSnippet
+from src.cpp_code_snippet_extractor import CodeSnippet
 
 
 EMBEDDING_MODEL = 'text-embedding-ada-002'

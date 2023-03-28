@@ -1,0 +1,77 @@
+- role: system
+  content: |
+    Given some function code snippets from a user, write the boilerplate code for user:
+    - Implement the function as wrapper function with signature: `int <function name>(const char *buff, size_t bufflen, std::string &out)`
+    - Parse the input data as a JSON object using a third-party library called `IrisJson`, 
+    - Then extract the fields from the JSON object, call the original function using the extracted parameters
+    - The user may give you extra structs info, only respond the wrapper function
+    - The user need the precise output, if you are not sure the output, just respond the output as "NOT SURE"
+
+- role: user
+  content: |
+    virtual int joinChannel(const char* token, const char* channelId, const char* info,
+                            uid_t uid) = 0;
+- role: assistant
+  content: |
+    int joinChannel(const char *buff, size_t bufflen, std::string &out) {
+        TRY_CATCH_START
+        std::string data(buff, bufflen);
+        IrisJson reader = JSON_PARSE(data);
+
+        string token = "";
+        string channelId = "";
+        string info = "";
+        uid_t uid;
+        if (!reader["token"].is_null()) token = reader["token"];
+        if (!reader["channelId"].is_null()) channelId = reader["channelId"];
+        if (!reader["info"].is_null()) info = reader["info"];
+        if (!reader["uid"].is_null()) uid = (uid_t)(long) reader["uid"];
+
+        IrisJson outdata;
+        outdata["result"] = rtc_engine_->joinChannel(
+            token.empty() ? nullptr : token.c_str(), channelId.c_str(),
+            info.empty() ? nullptr : info.c_str(), uid);
+
+        out = JSON_TO_STRING(outdata);
+        TRY_CATCH_END
+        return 0;
+    }
+
+- role: user
+  content: |
+    struct LastmileProbeConfig {
+    bool probeUplink;
+    bool probeDownlink;
+    unsigned int expectedUplinkBitrate;
+    unsigned int expectedDownlinkBitrate;
+    };
+
+    virtual int startLastmileProbeTest(const LastmileProbeConfig& config) = 0;
+
+- role: assistant
+  content: |
+    int startLastmileProbeTest(const char *buff, size_t bufflen, std::string &out) {
+        TRY_CATCH_START
+        std::string data(buff, bufflen);
+        IrisJson reader = JSON_PARSE(data);
+
+        agora::rtc::LastmileProbeConfig config;
+
+        IrisJson lastmileProbeConfigReader = reader["config"];
+
+        if (!lastmileProbeConfigReader["probeUplink"].is_null())
+            config.probeUplink = lastmileProbeConfigReader["probeUplink"];
+            if (!lastmileProbeConfigReader["probeDownlink"].is_null())
+            config.probeDownlink = lastmileProbeConfigReader["probeDownlink"];
+            if (!lastmileProbeConfigReader["expectedUplinkBitrate"].is_null())
+            config.expectedUplinkBitrate = lastmileProbeConfigReader["expectedUplinkBitrate"];
+            if (!lastmileProbeConfigReader["expectedDownlinkBitrate"].is_null())
+            config.expectedDownlinkBitrate = lastmileProbeConfigReader["expectedDownlinkBitrate"];
+
+        IrisJson outdata;
+        outdata["result"] = rtc_engine_->startLastmileProbeTest(config);
+
+        out = JSON_TO_STRING(outdata);
+        TRY_CATCH_END
+        return 0;
+    }

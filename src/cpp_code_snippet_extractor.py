@@ -4,6 +4,7 @@ import re
 from enum import Enum
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
+from fs.base import FS
 
 import openai
 
@@ -37,49 +38,19 @@ class ChunkCodeSnippet(CodeSnippet):
 #         self.codeBlocks = ""
 
 
-def findAllParameterTypesFromCodeSnippet(codeSnippet: str) -> List[str]:
-    parameterListPattern = r"\([^()]*\)"
-    parameterListMatches = re.finditer(
-        parameterListPattern, codeSnippet, re.MULTILINE)
-    parameterList: List[str] = []
-    for m in parameterListMatches:
-        pl = codeSnippet[m.start():m.end()]
-        parameterList.append(pl)
+class CPPCodeSnippetExtractor:
 
-    parameterTypes: List[str] = []
-    parameterTypesPattern = r"(?:const )?([a-zA-Z0-9_\*\&]+ )"
-    for pl in parameterList:
-        # parameterWithType = pl.split(",")
+    __fileSystem: FS
 
-        parameterTypesMatches = re.finditer(
-            parameterTypesPattern, pl, re.MULTILINE)
-        for m in pl.strip("(").strip(")").split(","):
-            # The macro, e.g., (__APPLE__)
-            if m.startswith("_"):
-                continue
-            # const int* out = nullptr
-            pt = m.split("=")[0].replace("const", "").strip().split(" ")[0].replace(
-                "&", "").replace("*", "").strip()
-            parameterTypes.append(pt)
+    __codeSnippets: List[CodeSnippet]
 
-    return parameterTypes
+    def __init__(self, fileSystem: FS) -> None:
+        self.__fileSystem = fileSystem
+        self.__codeSnippets = []
+        
+    def getAllCodeSnippets(self) -> List[CodeSnippet]:
+        return self.__codeSnippets
 
-def getStructCodeSnippetsOfTypeNames(typeNames: List[str], codeSnippetSources: List[CodeSnippet]) -> List[CodeSnippet]:
-    codeSnippets: List[CodeSnippet] = []
-
-    for typeName in typeNames:
-        for codeSnippet in codeSnippetSources:
-            if codeSnippet.type != CodeSnippetType.struct_t:
-                continue
-            
-            if codeSnippet.name == typeName:
-                codeSnippets.append(codeSnippet)
-                break
-
-    return codeSnippets
-
-
-class CPPCodeExtractor:
     def __extractClassBlock(fileInLines: List[str]) -> List[str]:
         out = []
         classStartPattern = r"class\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{"
@@ -112,7 +83,7 @@ class CPPCodeExtractor:
     def __removeComments(fileInLines: List[str]) -> str:
         return ""
 
-    def extractCodeBlocks(self, fileInStr: str) -> List[CodeSnippet]:
+    def __extractCodeSnippets(self, fileInStr: str) -> List[CodeSnippet]:
         # Define the regular expression patterns for class, enum, and struct
         class_pattern = r"class\s+\w+\s*(:?\s*(public)+\s+[\w\:\<\>]*)?\s*\{[\s\S]*\};"
         enum_pattern = r"enum\s+\w+\s*\{[^{}]*\};"
@@ -276,3 +247,50 @@ class CPPCodeExtractor:
         f.close()
 
         return cleaned_str
+
+    def extractCodeSnippets(self, filePaths: List[str]):
+        for fp in filePaths:
+            fileInStr = self.__fileSystem.readtext(fp)
+            css = self.__extractCodeSnippets(fileInStr)
+            self.__codeSnippets.extend(css)
+
+    def findAllParameterTypesFromCodeSnippet(self, codeSnippet: str) -> List[str]:
+        parameterListPattern = r"\([^()]*\)"
+        parameterListMatches = re.finditer(
+            parameterListPattern, codeSnippet, re.MULTILINE)
+        parameterList: List[str] = []
+        for m in parameterListMatches:
+            pl = codeSnippet[m.start():m.end()]
+            parameterList.append(pl)
+
+        parameterTypes: List[str] = []
+        parameterTypesPattern = r"(?:const )?([a-zA-Z0-9_\*\&]+ )"
+        for pl in parameterList:
+            # parameterWithType = pl.split(",")
+
+            parameterTypesMatches = re.finditer(
+                parameterTypesPattern, pl, re.MULTILINE)
+            for m in pl.strip("(").strip(")").split(","):
+                # The macro, e.g., (__APPLE__)
+                if m.startswith("_"):
+                    continue
+                # const int* out = nullptr
+                pt = m.split("=")[0].replace("const", "").strip().split(" ")[0].replace(
+                    "&", "").replace("*", "").strip()
+                parameterTypes.append(pt)
+
+        return parameterTypes
+
+    def getStructCodeSnippetsOfTypeNames(self, typeNames: List[str]) -> List[CodeSnippet]:
+        codeSnippets: List[CodeSnippet] = []
+
+        for typeName in typeNames:
+            for codeSnippet in self.__codeSnippets:
+                if codeSnippet.type != CodeSnippetType.struct_t:
+                    continue
+
+                if codeSnippet.name == typeName:
+                    codeSnippets.append(codeSnippet)
+                    break
+
+        return codeSnippets
