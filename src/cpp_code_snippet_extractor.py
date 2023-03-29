@@ -47,7 +47,7 @@ class CPPCodeSnippetExtractor:
     def __init__(self, fileSystem: FS) -> None:
         self.__fileSystem = fileSystem
         self.__codeSnippets = []
-        
+
     def getAllCodeSnippets(self) -> List[CodeSnippet]:
         return self.__codeSnippets
 
@@ -294,3 +294,19 @@ class CPPCodeSnippetExtractor:
                     break
 
         return codeSnippets
+
+    def getFieldTypeCodeSnippetsFromStruct(self, structCodeSnippet: CodeSnippet) -> List[CodeSnippet]:
+        fieldPattern = r'\b((?:(const\s)|(\w+\s?))?\:*\<?\w+\>?)(?=\*?\s+\w+;)'
+        findallFieldTypes: List[str] = list(map(lambda f: f[0], re.findall(fieldPattern, structCodeSnippet.source)))
+        fieldTypes: List[str] = []
+        for fft in findallFieldTypes:
+            ft = fft.replace("const", "").strip().replace("Optional<", "").replace(">", "")
+            if "::" in ft:
+                sft = ft.split("::")
+                ft = sft[len(sft) - 1]
+                
+            fieldTypes.append(ft)
+
+        out = list(filter(lambda cs: cs.name in fieldTypes, self.__codeSnippets))
+
+        return out

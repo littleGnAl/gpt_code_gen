@@ -50,34 +50,37 @@ class OpenAICodeGen:
 
                     structCSList = self.__cppCodeSnippetExtractor.getStructCodeSnippetsOfTypeNames(
                         parameterTypes)
-                    
 
-                    # y.append({"role": "user", "content": content})
-                    # for d in y:
-                    #     print(d)
+                    fieldTypeCSList: List[CodeSnippet] = []
+                    for scs in structCSList:
+                        t = self.__cppCodeSnippetExtractor.getFieldTypeCodeSnippetsFromStruct(
+                            scs)
+                        fieldTypeCSList.extend(
+                            list(filter(lambda x: x.type == CodeSnippetType.struct_t, t)))
 
-                    content = "\n".join(list(map(lambda cs: cs.source, structCSList))) + "\r\n\n" + ccs.source
+                    structCSList.extend(fieldTypeCSList)
+
+                    content = "\n".join(
+                        list(map(lambda cs: cs.source, structCSList))) + "\r\n\n" + ccs.source
                     messages: List[dict] = []
 
                     y = yaml.load_all(boilerplateFunctionPrompt)
                     for d in y:
                         for dd in d:
                             messages.append(dd)
-                        
-                            
-                            
+
                     messages.append({"role": "user", "content": content})
 
                     print(f"Processing code snippet:\n{content}")
                     print(f"######\n")
 
-                    # messages = [
-                    #     {
-                    #         "role": "system",
-                    #         "content": prompt,
-                    #     },
-                    #     {"role": "user", "content": content},
-                    # ]
+                    messages = [
+                        {
+                            "role": "system",
+                            "content": prompt,
+                        },
+                        {"role": "user", "content": content},
+                    ]
                     # call the OpenAI chat completion API with the given messages
                     response = openai.ChatCompletion.create(
                         model="gpt-3.5-turbo",
