@@ -56,7 +56,7 @@ class OpenAICodeGen:
                         t = self.__cppCodeSnippetExtractor.getFieldTypeCodeSnippetsFromStruct(
                             scs)
                         fieldTypeCSList.extend(
-                            list(filter(lambda x: x.type == CodeSnippetType.struct_t, t)))
+                            list(filter(lambda x: x.type == CodeSnippetType.struct_t or x.type == CodeSnippetType.enum_t, t)))
 
                     structCSList.extend(fieldTypeCSList)
 
