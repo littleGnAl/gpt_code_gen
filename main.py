@@ -5,6 +5,7 @@ from fs.base import FS
 from fs.copy import copy_file
 
 from src.cpp_code_snippet_extractor import CPPCodeSnippetExtractor
+from src.llama_index_datastore import LlamaIndexDataStore
 from src.openai_code_gen import OpenAICodeGen
 from src.openai_embedding import OpenAIEmbedding
 
@@ -38,16 +39,21 @@ def main():
     # fileInStr = fileSystem.readtext(backupFilePath)
     # codeBlocks = cppExtractor.extractCodeBlocks(fileInStr)
 
-    wrapperTemplate = fileSystem.readtext(
-        "/Users/littlegnal/codes/personal-project/gpt_code_gen/promptions/wrapper_template.txt")
-    boilerplateFunctionPrompt = fileSystem.readtext(
-        "/Users/littlegnal/codes/personal-project/gpt_code_gen/promptions/boilerplate_function_prompt.yaml")
-    structFinderPrompt = fileSystem.readtext(
-        "/Users/littlegnal/codes/personal-project/gpt_code_gen/promptions/parameter_types_finder_prompt.md")
-    output = openAICodeGen.generate(
-        wrapperTemplate, boilerplateFunctionPrompt, structFinderPrompt)
-    print("\n--------\n")
-    print(output)
+    # wrapperTemplate = fileSystem.readtext(
+    #     "/Users/littlegnal/codes/personal-project/gpt_code_gen/promptions/wrapper_template.txt")
+    # boilerplateFunctionPrompt = fileSystem.readtext(
+    #     "/Users/littlegnal/codes/personal-project/gpt_code_gen/promptions/boilerplate_function_prompt.yaml")
+    # structFinderPrompt = fileSystem.readtext(
+    #     "/Users/littlegnal/codes/personal-project/gpt_code_gen/promptions/parameter_types_finder_prompt.md")
+    # output = openAICodeGen.generate(
+    #     wrapperTemplate, boilerplateFunctionPrompt, structFinderPrompt)
+    # print("\n--------\n")
+    # print(output)
+    
+    dataStore = LlamaIndexDataStore(cppExtractor)
+    dataStore.loadData(intputDir)
+    # dataStore.indexCodeSnippets(cppExtractor.getAllCodeSnippets())
+    dataStore.query("class")
 
     # openAIEmbedding.embeddingCodeBlocks(codeBlocks)
 
