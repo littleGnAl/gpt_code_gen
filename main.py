@@ -51,9 +51,9 @@ def main():
     # print(output)
     
     dataStore = LlamaIndexDataStore(cppExtractor)
-    dataStore.loadData(intputDir)
-    # dataStore.indexCodeSnippets(cppExtractor.getAllCodeSnippets())
-    dataStore.query("class")
+    # dataStore.loadData(intputDir)
+    dataStore.indexCodeSnippets(cppExtractor.getAllCodeSnippets())
+    dataStore.query("class IRtcEngine")
 
     # openAIEmbedding.embeddingCodeBlocks(codeBlocks)
 
