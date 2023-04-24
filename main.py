@@ -1,9 +1,17 @@
 import argparse
+import asyncio
 from enum import Enum
 import os
 import sys
+
+import aiohttp
 from src.cxx_code_snippet_extractor import CXXCodeSnippetExtractor
 from src.gpt_code_gen import DefaultResponseHandler, DefaultRequestBuilder, GPTCodeGen
+import semantic_kernel as sk
+from semantic_kernel.ai.open_ai import OpenAITextCompletion
+
+from aiohttp import ClientSession
+import openai
 
 
 class LanguageType(str, Enum):
@@ -47,12 +55,22 @@ def main():
         print(f"The language of {language_type} is not supported yet.")
         return
 
+    api_key = os.getenv("OPENAI_API_KEY")
+    
+    global_session = aiohttp.ClientSession(trust_env=True)
+    
+    openai.aiosession.set(global_session)
+
+    sk_kernel = sk.Kernel()
+    sk_kernel.config.add_text_backend(
+        "dv", OpenAITextCompletion("text-davinci-003", api_key))
+
     cpp_extractor = CXXCodeSnippetExtractor()
     request_builder = DefaultRequestBuilder(
         process_prompt_path,
         include_relative_code_snippets)
     reponse_handler = DefaultResponseHandler(
-        output_template_prompt_path, file_name_prompt_path, output_dir)
+        output_template_prompt_path, file_name_prompt_path, output_dir, sk_kernel)
     gpt_code_gen = GPTCodeGen(max_requests_per_minute=rpm)
 
     export_files = list(map(lambda p: os.path.join(
@@ -71,6 +89,8 @@ def main():
         code_snippet_files,
         request_builder,
         reponse_handler)
+    
+    global_session.close()
 
 
 if __name__ == '__main__':

@@ -12,6 +12,9 @@ from abc import ABC, abstractmethod
 
 from .openai_api import get_chat_completion
 
+import semantic_kernel as sk
+from semantic_kernel.ai.open_ai import OpenAITextCompletion
+
 
 class ResponseHandler(ABC):
     @abstractmethod
@@ -103,7 +106,9 @@ class DefaultResponseHandler(ResponseHandler):
 
     __processing_contents: List[str]
 
-    def __init__(self, output_template_prompt_path: str, file_name_prompt_path: str, output_dir: str) -> None:
+    __sk_kernel: sk.Kernel
+
+    def __init__(self, output_template_prompt_path: str, file_name_prompt_path: str, output_dir: str, sk_kernel: sk.Kernel) -> None:
         self.__output_dir = output_dir
         self.__output_file_path = ""
         self.__output_file_path_tmp = ""
@@ -112,17 +117,30 @@ class DefaultResponseHandler(ResponseHandler):
         self.__output_template_prompt_path = output_template_prompt_path
         self.__file_name_prompt_path = file_name_prompt_path
 
+        self.__sk_kernel = sk_kernel
+
     def on_start(self,
                  code_snippet_file: CodeSnippetFile,
                  code_snippet: CodeSnippet):
 
         print(f'Creating file name for: {code_snippet.name}')
-        file_name_messages = create_gpt_messages(
-            self.__file_name_prompt_path, code_snippet.name)
-        file_name = get_chat_completion(
-            messages=file_name_messages,
-            model="gpt-3.5-turbo",
-            temperature=0)
+        # file_name_messages = create_gpt_messages(
+        #     self.__file_name_prompt_path, code_snippet.name)
+        # file_name = get_chat_completion(
+        #     messages=file_name_messages,
+        #     model="gpt-3.5-turbo",
+        #     temperature=0)
+
+        create_file_name_prompt = ""
+        with open(self.__file_name_prompt_path) as f:
+            create_file_name_prompt = f.read()
+
+        create_file_name = self.__sk_kernel.create_semantic_function(
+            create_file_name_prompt, "create_file_name")
+        # file_name = create_file_name(code_snippet.name)
+
+        file_name = create_file_name.invoke(code_snippet.name)
+
         print(f'file name: {file_name}')
 
         output_file_name = file_name
@@ -242,6 +260,7 @@ class _CompletionHandler:
 class GPTCodeGen:
     __model: str
     __max_requests_per_minute: int
+    __sk_kernel: sk.Kernel
 
     def __init__(self, model: str = "gpt-3.5-turbo", max_requests_per_minute: int = 2) -> None:
         self.__model = model
@@ -326,6 +345,6 @@ class GPTCodeGen:
                         cs,
                         response_handler)
 
-                    self.__request(requests_file_path,
-                                   save_completion,
-                                   self.__max_requests_per_minute)
+                    # self.__request(requests_file_path,
+                    #                save_completion,
+                    #                self.__max_requests_per_minute)

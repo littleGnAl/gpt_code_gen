@@ -1,0 +1,9 @@
+Given the class name "MyClass", output the file name by concat it with lowercase without any style, prefixing it with "mock_" and suffixing it with "_gen.hpp".
+I want you to only reply the file name. Do not write explanations.
+
+Input: IRtcEngine
+Output: mock_irtcengine_gen.hpp
+
++++++
+Input: {{$input}}
++++++
