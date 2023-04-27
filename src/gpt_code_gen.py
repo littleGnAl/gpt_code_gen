@@ -3,6 +3,8 @@ import json
 import logging
 import os
 from typing import List
+import aiohttp
+import openai
 
 import yaml
 
@@ -108,7 +110,7 @@ class DefaultResponseHandler(ResponseHandler):
 
     __sk_kernel: sk.Kernel
 
-    def __init__(self, output_template_prompt_path: str, file_name_prompt_path: str, output_dir: str, sk_kernel: sk.Kernel) -> None:
+    def __init__(self, output_template_prompt_path: str, file_name_prompt_path: str, output_dir: str, sk_kernel: sk.Kernel = None) -> None:
         self.__output_dir = output_dir
         self.__output_file_path = ""
         self.__output_file_path_tmp = ""
@@ -134,12 +136,24 @@ class DefaultResponseHandler(ResponseHandler):
         create_file_name_prompt = ""
         with open(self.__file_name_prompt_path) as f:
             create_file_name_prompt = f.read()
+            
+        api_key = os.getenv("OPENAI_API_KEY")
+    
+        global_session = aiohttp.ClientSession(trust_env=True)
+        
+        openai.aiosession.set(global_session)
 
-        create_file_name = self.__sk_kernel.create_semantic_function(
+        sk_kernel = sk.Kernel()
+        sk_kernel.config.add_text_backend(
+            "dv", OpenAITextCompletion("text-davinci-003", api_key))
+
+        create_file_name = sk_kernel.create_semantic_function(
             create_file_name_prompt, "create_file_name")
         # file_name = create_file_name(code_snippet.name)
 
-        file_name = create_file_name.invoke(code_snippet.name)
+        file_name = create_file_name(code_snippet.name)
+        
+        
 
         print(f'file name: {file_name}')
 
