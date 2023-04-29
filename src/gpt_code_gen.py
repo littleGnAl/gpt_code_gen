@@ -121,43 +121,24 @@ class DefaultResponseHandler(ResponseHandler):
 
         self.__sk_kernel = sk_kernel
 
-    def on_start(self,
-                 code_snippet_file: CodeSnippetFile,
-                 code_snippet: CodeSnippet):
+    async def on_start(self,
+                       code_snippet_file: CodeSnippetFile,
+                       code_snippet: CodeSnippet):
 
         print(f'Creating file name for: {code_snippet.name}')
-        # file_name_messages = create_gpt_messages(
-        #     self.__file_name_prompt_path, code_snippet.name)
-        # file_name = get_chat_completion(
-        #     messages=file_name_messages,
-        #     model="gpt-3.5-turbo",
-        #     temperature=0)
 
         create_file_name_prompt = ""
         with open(self.__file_name_prompt_path) as f:
             create_file_name_prompt = f.read()
-            
-        api_key = os.getenv("OPENAI_API_KEY")
-    
-        global_session = aiohttp.ClientSession(trust_env=True)
-        
-        openai.aiosession.set(global_session)
 
-        sk_kernel = sk.Kernel()
-        sk_kernel.config.add_text_backend(
-            "dv", OpenAITextCompletion("text-davinci-003", api_key))
-
-        create_file_name = sk_kernel.create_semantic_function(
+        create_file_name = self.__sk_kernel.create_semantic_function(
             create_file_name_prompt, "create_file_name")
-        # file_name = create_file_name(code_snippet.name)
 
-        file_name = create_file_name(code_snippet.name)
-        
-        
+        file_name = await create_file_name.invoke_async(code_snippet.name)
 
-        print(f'file name: {file_name}')
+        output_file_name: str = str(file_name)
+        print(f'file name: {str(file_name)}')
 
-        output_file_name = file_name
         self.__output_file_path = os.path.join(
             os.path.abspath(self.__output_dir), output_file_name)
 
@@ -175,12 +156,16 @@ class DefaultResponseHandler(ResponseHandler):
             os.remove(self.__output_file_path_tmp)
 
         print(f'Creating output template for: {code_snippet.name}')
-        output_template_messages = create_gpt_messages(
-            self.__output_template_prompt_path, code_snippet.name)
-        self.__output_template = get_chat_completion(
-            messages=output_template_messages,
-            model="gpt-3.5-turbo",
-            temperature=0)
+
+        output_template_prompt = ""
+        with open(self.__output_template_prompt_path) as f:
+            output_template_prompt = f.read()
+
+        create_output_template = self.__sk_kernel.create_semantic_function(
+            output_template_prompt, "create_output_template")
+
+        self.__output_template = str(await create_output_template.invoke_async(code_snippet.name))
+
         print(f'Output template:\n {self.__output_template}')
 
         if "{{ BODY }}" not in self.__output_template:
@@ -212,7 +197,7 @@ class DefaultResponseHandler(ResponseHandler):
         print(f"All completions write to: {self.__output_file_path}")
 
 
-class _CompletionHandler:
+class _CompletionHandler(object):
     __output_file_path: str
     __processing_result_save_path: str
 
@@ -231,13 +216,20 @@ class _CompletionHandler:
         self.__processing_result_save_path = self.__output_file_path.replace(
             ".jsonl", "_processing.jsonl")
 
+    @classmethod
+    async def create(cls, output_file_path: str, code_snippet_file: CodeSnippetFile,
+                     code_snippet: CodeSnippet, output_content_handler: ResponseHandler):
+        self = _CompletionHandler(
+            output_file_path, code_snippet_file, code_snippet, output_content_handler)
         if os.path.exists(self.__processing_result_save_path):
             os.remove(self.__processing_result_save_path)
 
         open(self.__processing_result_save_path, 'w').close()
 
-        self.__output_content_handler.on_start(
+        await self.__output_content_handler.on_start(
             self.__code_snippet_file, self.__code_snippet)
+
+        return self
 
     def __call__(self, task_id, request_data, response):
         messages = request_data["messages"]
@@ -334,7 +326,7 @@ class GPTCodeGen:
 
         save_completion.complete()
 
-    def generate(
+    async def generate(
             self,
             code_snippet_files: List[CodeSnippetFile],
             request_builder: RequestBuilder,
@@ -353,7 +345,7 @@ class GPTCodeGen:
                         build_tmp_path,
                         request_contents)
 
-                    save_completion = _CompletionHandler(
+                    save_completion = await _CompletionHandler.create(
                         requests_file_path,
                         cxx_file,
                         cs,

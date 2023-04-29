@@ -10,7 +10,6 @@ from src.gpt_code_gen import DefaultResponseHandler, DefaultRequestBuilder, GPTC
 import semantic_kernel as sk
 from semantic_kernel.ai.open_ai import OpenAITextCompletion
 
-from aiohttp import ClientSession
 import openai
 
 
@@ -57,43 +56,19 @@ async def main():
 
     api_key = os.getenv("OPENAI_API_KEY")
 
+    global_session = aiohttp.ClientSession(trust_env=True)
+    openai.aiosession.set(global_session)
+
     sk_kernel = sk.Kernel()
     sk_kernel.config.add_text_backend(
         "dv", OpenAITextCompletion("text-davinci-003", api_key))
-
-    global_session = aiohttp.ClientSession(trust_env=True)
-    openai.aiosession.set(global_session)
-    
-    # async with aiohttp.ClientSession(trust_env=True) as session:
-    #     openai.aiosession.set(session)
-    
-    print(f"Creating file name...")
-    create_file_name_prompt = """
-Given the class name "MyClass", output the file name by concat it with lowercase without any style, prefixing it with "mock_" and suffixing it with "_gen.hpp".
-I want you to only reply the file name. Do not write explanations.
-
-Input: IRtcEngine
-Output: mock_irtcengine_gen.hpp
-
-+++++
-Input: {{$input}}
-+++++    
-"""
-    
-    create_file_name = sk_kernel.create_semantic_function(
-    create_file_name_prompt, "create_file_name")
-    # file_name = create_file_name(code_snippet.name)
-
-    file_name = await create_file_name.invoke_async("IMediaPlayer")
-    
-    print(f"file name: {file_name}")
 
     cpp_extractor = CXXCodeSnippetExtractor()
     request_builder = DefaultRequestBuilder(
         process_prompt_path,
         include_relative_code_snippets)
     reponse_handler = DefaultResponseHandler(
-        output_template_prompt_path, file_name_prompt_path, output_dir)
+        output_template_prompt_path, file_name_prompt_path, output_dir, sk_kernel)
     gpt_code_gen = GPTCodeGen(max_requests_per_minute=rpm)
 
     export_files = list(map(lambda p: os.path.join(
@@ -108,10 +83,10 @@ Input: {{$input}}
                        "IRtcEngine") or x.type != "class",
             code_snippet_file.code_snippets))
 
-    # gpt_code_gen.generate(
-    #     code_snippet_files,
-    #     request_builder,
-    #     reponse_handler)
+    await gpt_code_gen.generate(
+        code_snippet_files,
+        request_builder,
+        reponse_handler)
 
     await global_session.close()
 
